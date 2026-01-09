@@ -1,50 +1,61 @@
 <div class="col-sm-12">
-    @if (session('status'))
+
+    {{-- SUCCESS --}}
+    @if (session('status') || session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>{{ session('status') }}</strong>
+            <i data-feather="check-circle" class="me-1"></i>
+            <strong>{{ session('status') ?? session('success') }}</strong>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+
+
+    {{-- FAILED / ERROR (custom) --}}
     @if (session('failed'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @if (is_array(session('failed')))
-            <ul>
-                @foreach (session('failed') as $message)
-                    <li>{{ $message }}</li>
-                @endforeach
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-feather="x-circle" class="me-1"></i>
+            <strong>Process Failed</strong>
+            <ul class="mb-0 mt-2 ps-3">
+                @if (is_array(session('failed')))
+                    @foreach (session('failed') as $message)
+                        <li>{{ $message }}</li>
+                    @endforeach
+                @else
+                    <li>{{ session('failed') }}</li>
+                @endif
             </ul>
-        @else
-        <ul>
-            <li>{{ session('failed') }}</li>
-        </ul>
-        @endif
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
-
-
-
-    @if (session('errorLogs'))
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            <ul>
-                <li><strong>Data Process Failed !</strong></li>
-                @foreach (session('errorLogs') as $error)
-                    <li><strong>{{ $error }}</strong></li>
-                @endforeach
-            </ul>
         </div>
     @endif
 
-    @if (count($errors) > 0)
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <ul>
-                <li><strong>Data Process Failed !</strong></li>
-                @foreach ($errors->all() as $error)
-                    <li><strong>{{ $error }}</strong></li>
+
+    {{-- ERROR LOGS (bulk process / import) --}}
+    @if (session('errorLogs'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i data-feather="alert-triangle" class="me-1"></i>
+            <strong>Data Process Failed</strong>
+            <ul class="mb-0 mt-2 ps-3">
+                @foreach (session('errorLogs') as $error)
+                    <li>{{ $error }}</li>
                 @endforeach
             </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+
+
+    {{-- VALIDATION ERRORS --}}
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-feather="alert-octagon" class="me-1"></i>
+            <strong>Validation Error</strong>
+            <ul class="mb-0 mt-2 ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
 </div>

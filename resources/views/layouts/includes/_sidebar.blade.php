@@ -19,7 +19,13 @@
              href="javascript:void(0);"
              data-bs-toggle="collapse"
              data-bs-target="#collapseMasterData"
-             aria-expanded="{{ nav_show(['location*','inventory*','inventory-item*']) ? 'true' : 'false' }}"
+             aria-expanded="{{ nav_show([
+                'location', 'location/*',
+                'inventory', 'inventory/*',
+                'inventory-item', 'inventory-item/*',
+                'api-endpoint', 'api-endpoint/*'
+              ]) ? 'true' : 'false' }}"
+
              aria-controls="collapseMasterData">
 
             <div class="nav-link-icon">
@@ -32,7 +38,13 @@
             </div>
           </a>
 
-          <div class="collapse {{ nav_show(['location*','inventory*','inventory-item*']) }}"
+          <div class="collapse {{ nav_show([
+            'location', 'location/*',
+            'inventory', 'inventory/*',
+            'inventory-item', 'inventory-item/*',
+            'api-endpoint', 'api-endpoint/*'
+          ]) }}"
+
                id="collapseMasterData"
                data-bs-parent="#accordionSidenav">
 
@@ -44,16 +56,23 @@
                 Location
               </a>
 
-              <a class="nav-link {{ nav_active('inventory*') }}"
-                 href="{{ url('/inventory') }}">
+              <a class="nav-link {{ nav_active(['inventory', 'inventory/*']) }}"
+                href="{{ url('/inventory') }}">
                 <i data-feather="archive" class="me-2"></i>
                 Inventory
-              </a>
+                </a>
 
-              <a class="nav-link {{ nav_active('inventory-item*') }}"
-                 href="{{ url('/inventory-item') }}">
+                <a class="nav-link {{ nav_active(['inventory-item', 'inventory-item/*']) }}"
+                href="{{ url('/inventory-item') }}">
                 <i data-feather="layers" class="me-2"></i>
                 Inventory Item
+                </a>
+
+
+              <a class="nav-link {{ nav_active('api-endpoint*') }}"
+                 href="{{ url('/api-endpoint') }}">
+                <i data-feather="link" class="me-2"></i>
+                API Endpoint
               </a>
 
             </nav>
