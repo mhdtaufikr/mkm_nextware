@@ -1,0 +1,43 @@
+/* TOPBAR */
+.topbar-logo {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .topbar-title {
+    font-weight: 800;
+    letter-spacing: .4px;
+    font-size: 1.05rem;
+    color: #0b1b2b;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 576px) {
+    .topbar-title { display: none; } /* biar mobile tidak penuh */
+    .topbar-logo { height: 26px; }
+  }
+
+/* APP LOADER */
+.app-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;                 /* PENTING */
+    align-items: center;           /* center vertical */
+    justify-content: center;       /* center horizontal */
+
+    background: rgba(255, 255, 255, 0.85);
+
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .15s ease;
+  }
+
+  .app-loader.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
