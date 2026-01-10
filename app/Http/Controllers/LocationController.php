@@ -108,4 +108,14 @@ class LocationController extends Controller
         }
     }
 
+    public function toggleActive(Location $location)
+{
+    $location->active = !$location->active;
+
+    $location->save();
+
+    return redirect()->route('location.index')->with('success', 'Status location berhasil diubah.');
+}
+
+
 }

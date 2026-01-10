@@ -12,8 +12,10 @@ class InventoryController extends Controller
 {
     public function index()
     {
-        // dropdown location (internal id + external_id)
-        $locations = Location::orderBy('display_name')->get();
+       // dropdown location (internal id + external_id) - ONLY ACTIVE
+        $locations = Location::where('active', 1)
+        ->orderBy('display_name')
+        ->get();
 
         // list inventory (bisa kamu filter by location nanti)
         $inventories = Inventory::orderBy('id', 'desc')->limit(2000)->get();

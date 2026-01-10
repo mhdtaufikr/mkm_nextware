@@ -9,7 +9,18 @@
           $user = auth()->user();
           $isAdmin = auth()->check() && $user->role === 'admin';
         @endphp
+    <div class="sidenav-menu-heading">Dashboard</div>
+        <div class="nav accordion" id="accordionSidenav">
 
+        <!-- ================= HOME ================= -->
+        <a class="nav-link {{ nav_active('home') }}"
+            href="{{ route('home') }}">
+            <div class="nav-link-icon">
+            <i data-feather="home"></i>
+            </div>
+            Home
+        </a>
+        </div>
         @if ($isAdmin)
 
           <!-- ================= MASTER DATA ================= -->

@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('location')->name('location.')->group(function () {
         Route::get('/', [LocationController::class, 'index'])->name('index');
         Route::post('/sync', [LocationController::class, 'sync'])->name('sync');
+        Route::patch('/{location}/toggle-active', [LocationController::class, 'toggleActive'])->name('toggleActive');
     });
 
     Route::prefix('api-endpoint')->group(function () {

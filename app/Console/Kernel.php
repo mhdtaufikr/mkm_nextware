@@ -15,7 +15,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('inventory:sync')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+
+        $schedule->command('inventory-item:sync')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     }
 
     /**

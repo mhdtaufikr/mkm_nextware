@@ -49,6 +49,9 @@
                 <th>Address</th>
                 <th>Status</th>
                 <th style="width:160px;">External ID</th>
+                <th>Active</th>
+                <th style="width:170px;">Action</th>
+
               </tr>
             </thead>
             <tbody>
@@ -67,6 +70,33 @@
                     @endif
                   </td>
                   <td><small class="text-muted">{{ $loc->external_id }}</small></td>
+                  <td>
+                    @if($loc->active)
+                      <span class="badge bg-success">Active</span>
+                    @else
+                      <span class="badge bg-secondary">Inactive</span>
+                    @endif
+                  </td>
+
+                  <td>
+                    <form action="{{ route('location.toggleActive', $loc->id) }}" method="POST" class="d-inline">
+                      @csrf
+                      @method('PATCH')
+
+                      @if($loc->active)
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                          <i data-feather="slash" class="me-1"></i>
+                          Deactivate
+                        </button>
+                      @else
+                        <button type="submit" class="btn btn-sm btn-outline-success">
+                          <i data-feather="check-circle" class="me-1"></i>
+                          Activate
+                        </button>
+                      @endif
+                    </form>
+                  </td>
+
                 </tr>
               @endforeach
             </tbody>

@@ -16,7 +16,7 @@ class InventoryItemController extends Controller
 {
     public function index()
     {
-        $locations = Location::orderBy('location_code')->get();
+        $locations = Location::where('active', 1)->orderBy('location_code')->get();
 
         // tampilkan latest 2000 biar ga berat (opsional)
         $items = InventoryItem::orderBy('id', 'desc')->limit(2000)->get();
