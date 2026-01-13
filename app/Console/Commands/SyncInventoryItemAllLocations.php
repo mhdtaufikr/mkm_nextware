@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 use App\Models\ApiEndpoint;
 use App\Models\Location;
@@ -14,11 +13,14 @@ use App\Models\InventoryItem;
 
 class SyncInventoryItemAllLocations extends Command
 {
-    protected $signature = 'inventory-item:sync {--date=} {--location_external_id=}';
-    protected $description = 'Sync InventoryItem untuk semua Location active=1, dengan start_date/end_date = hari ini (atau override date)';
+    protected $signature = 'inventory-item:sync {--location_external_id=}';
+    protected $description = 'FULL Sync InventoryItem untuk semua Location active=1 (tanpa limit & tanpa date filter)';
 
     public function handle(): int
     {
+        // ⏱️ samakan dengan FetchInventoryItemData
+        set_time_limit(300);
+
         $endpoint = ApiEndpoint::where('code', 'IWS_Get_InventoryItem')->first();
         if (!$endpoint) {
             $this->error('API Endpoint code IWS_Get_InventoryItem tidak ditemukan di master.');
@@ -40,26 +42,23 @@ class SyncInventoryItemAllLocations extends Command
             $headers[$endpoint->auth_key] = $endpoint->auth_value;
         }
 
-        // tanggal: default hari ini (mengikuti timezone app)
-        $dateOpt = $this->option('date');
-        $date = $dateOpt
-            ? Carbon::parse($dateOpt)->format('Y-m-d')
-            : Carbon::now()->format('Y-m-d');
-
+        /**
+         * 🔑 PARAM DISAMAKAN DENGAN FetchInventoryItemData
+         */
         $baseParams = array_merge($decode($endpoint->params), [
-            'limit'          => 10,   // page 1 only (sesuai kode awal kamu)
-            'page'           => 1,
-            'serial_number'  => '',
-            'rack'           => '',
-            'rack_type'      => '',
-            'start_date'     => $date,
-            'end_date'       => $date,
+            'limit'         => -1,
+            'page'          => 1,
+            'serial_number' => '',
+            'rack'          => '',
+            'rack_type'     => '',
+            'start_date'    => '',
+            'end_date'      => '',
         ]);
 
-        // buang null saja (jangan buang empty string)
-        $baseParams = array_filter($baseParams, fn($v) => $v !== null);
+        // buang null saja
+        $baseParams = array_filter($baseParams, fn ($v) => $v !== null);
 
-        // optional speed-up
+        // optional performance
         InventoryItem::unsetEventDispatcher();
 
         $onlyLocExt = $this->option('location_external_id');
@@ -90,16 +89,15 @@ class SyncInventoryItemAllLocations extends Command
             $params = $baseParams;
             $params['location_id'] = $loc->external_id;
 
-            Log::info('SCHEDULER SYNC InventoryItem', [
+            Log::info('FULL SYNC InventoryItem', [
                 'location' => $loc->display_name,
                 'location_external_id' => $loc->external_id,
-                'date' => $date,
                 'url' => $url,
                 'method' => $method,
                 'params' => $params,
             ]);
 
-            $this->info("Sync InventoryItem: {$loc->display_name} | external_id={$loc->external_id} | date={$date}");
+            $this->info("Sync InventoryItem: {$loc->display_name} | external_id={$loc->external_id}");
 
             try {
                 $response = Http::withHeaders($headers)
@@ -128,14 +126,13 @@ class SyncInventoryItemAllLocations extends Command
                         $code       = data_get($r, 'code');
                         $sn         = data_get($r, 'serial_number');
 
-                        // minimal fields
-                        if (!$extLocId || !$code) continue;
+                        // minimal validation
+                        if (!$extLocId || !$code) {
+                            continue;
+                        }
 
                         /**
-                         * custom_field yang DISIMPAN ke kolom inventory_items.custom_field:
-                         * PRIORITAS = product.custom_field (yang berisi part_no, cutting_center, dll)
-                         * fallback  = custom_field_product
-                         * terakhir  = root custom_field (misal delivery_date) jika memang tidak ada yang lain
+                         * custom_field priority (sama seperti kode kamu)
                          */
                         $customField = data_get($r, 'product.custom_field');
                         if ($customField === null || (is_array($customField) && empty($customField))) {
@@ -145,14 +142,9 @@ class SyncInventoryItemAllLocations extends Command
                             $customField = data_get($r, 'custom_field');
                         }
 
-                        // --- normalize location_payload (kadang [] di response) ---
+                        // normalize location payload
                         $locationPayload = data_get($r, 'location');
                         if (is_array($locationPayload) && empty($locationPayload)) {
-                            $locationPayload = null;
-                        }
-
-                        // bikin payload minimal supaya tetap kesimpan walau API kirim []
-                        if ($locationPayload === null) {
                             $locationPayload = [
                                 '_id'  => data_get($r, 'location_id'),
                                 'code' => data_get($r, 'location_code'),
@@ -182,7 +174,7 @@ class SyncInventoryItemAllLocations extends Command
                             'raw_payload' => $r,
                         ];
 
-                        // key anti duplikat
+                        // key anti duplikat (SAMA dengan kode kamu)
                         $key = [
                             'external_location_id' => $extLocId,
                             'code' => $code,
@@ -191,7 +183,6 @@ class SyncInventoryItemAllLocations extends Command
                         if (!empty($sn)) {
                             $key['serial_number'] = $sn;
                         } else {
-                            // fallback kalau SN kosong
                             $key['external_id'] = $externalId;
                         }
 

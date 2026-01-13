@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -89,13 +90,96 @@ class HomeController extends Controller
             ->orderByDesc('total_qty')
             ->get();
 
+            $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
+            $endOfMonth   = Carbon::now()->endOfMonth()->toDateString();
+            // ===============================
+            // PLANNING DAILY (CAN BE EMPTY)
+            // ===============================
+            $planningDaily = DB::table('plannings')
+            ->where('location_code', $selected->location_code)
+            ->whereBetween(DB::raw('DATE(plan_date)'), [$startOfMonth, $endOfMonth])
+            ->selectRaw('
+                DATE(plan_date) as date,
+                cutting_center,
+                SUM(qty) as planned_qty
+            ')
+            ->groupBy(DB::raw('DATE(plan_date)'), 'cutting_center')
+            ->orderBy('date')
+            ->get();
+
+            // ===============================
+            // ACTUAL DAILY
+            // ===============================
+            $actualDaily = DB::table('inventory_items')
+            ->where('location_code', $selected->location_code)
+            ->whereBetween(DB::raw('DATE(receive_date)'), [$startOfMonth, $endOfMonth])
+            ->whereRaw("JSON_EXTRACT(custom_field, '$.cutting_center') IS NOT NULL")
+            ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) <> ''")
+            ->selectRaw("
+                DATE(receive_date) as date,
+                JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) as cutting_center,
+                SUM(qty) as actual_qty
+            ")
+            ->groupBy(DB::raw('DATE(receive_date)'), 'cutting_center')
+            ->orderBy('date')
+            ->get();
+
+
+            // ===============================
+            // BUILD FINAL STRUCTURE
+            // ===============================
+            $otdcDailyByCC = [];
+
+            $cuttingCenters = collect()
+            ->merge($planningDaily->pluck('cutting_center'))
+            ->merge($actualDaily->pluck('cutting_center'))
+            ->unique()
+            ->values();
+
+            foreach ($cuttingCenters as $cc) {
+
+            $planRows = $planningDaily->where('cutting_center', $cc);
+            $actRows  = $actualDaily->where('cutting_center', $cc);
+
+            $dates = collect()
+                ->merge($planRows->pluck('date'))
+                ->merge($actRows->pluck('date'))
+                ->unique()
+                ->sort()
+                ->values();
+
+            $planned = [];
+            $actual  = [];
+
+            foreach ($dates as $d) {
+                $planned[] = (int) optional(
+                    $planRows->firstWhere('date', $d)
+                )->planned_qty ?? 0;
+
+                $actual[] = (int) optional(
+                    $actRows->firstWhere('date', $d)
+                )->actual_qty ?? 0;
+            }
+
+            $otdcDailyByCC[$cc] = [
+                'dates'   => $dates->toArray(),
+                'planned' => $planned,
+                'actual'  => $actual
+            ];
+            }
+
+
+
+
+
         return view('home.index', compact(
             'locations',
             'selected',
             'stats',
             'byStatus',
             'topItems',
-            'byCuttingCenter'
+            'byCuttingCenter',
+            'otdcDailyByCC'
         ));
     }
 }

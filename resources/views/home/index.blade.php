@@ -107,8 +107,262 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-6 mb-2">
+                <div class="card card-custom">
+                    <div class="card-header">
+                        <h4 class="card-title">Preventive Maintenance Plan vs Actual (Daily)</h4>
+                    </div>
+                    <div class="card-body">
 
-            <div class="col-lg-6">
+                        <div id="pmDailyCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div hidden class="carousel-indicators">
+                                @foreach ($otdcDailyByCC as $cc => $rows)
+                                    <button type="button"
+                                        data-bs-target="#pmDailyCarousel"
+                                        data-bs-slide-to="{{ $loop->index }}"
+                                        class="{{ $loop->first ? 'active' : '' }}">
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <div class="carousel-inner">
+                                @foreach ($otdcDailyByCC as $cc => $rows)
+                                    <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+                                        <p class="text-center fw-bold mb-2">{{ $cc }}</p>
+
+                                        <div class="chart-container">
+                                            <div id="pm-chart-{{ \Illuminate\Support\Str::slug($cc, '_') }}"
+                                                 class="chart-custom"style="width:100%; height:360px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            <button class="carousel-control-prev" type="button"
+                                data-bs-target="#pmDailyCarousel" data-bs-slide="prev">
+                                <span hidden class="carousel-control-prev-icon"></span>
+                            </button>
+
+                            <button class="carousel-control-next" type="button"
+                                data-bs-target="#pmDailyCarousel" data-bs-slide="next">
+                                <span hidden class="carousel-control-next-icon"></span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <script>
+                am5.ready(function () {
+
+                    // ===============================
+                    // HELPER: GENERATE DAY 1–31
+                    // ===============================
+                    function generateMonthDays() {
+                        return Array.from({ length: 31 }, (_, i) => (i + 1).toString());
+                    }
+
+                    // ===============================
+                    // CREATE CHART (SAMA POLA OTDC)
+                    // ===============================
+                    function createPMDailyChart(ccSlug, days, plannedData, actualData, percentageData) {
+
+                        var root = am5.Root.new(`pm-chart-${ccSlug}`);
+                        root.setThemes([am5themes_Animated.new(root)]);
+
+                        var chart = root.container.children.push(
+                            am5xy.XYChart.new(root, {
+                                panX: false,
+                                panY: false,
+                                wheelX: "none",
+                                wheelY: "none",
+                                layout: root.verticalLayout
+                            })
+                        );
+
+                        // ===== X AXIS (DAY 1–31) =====
+                        var xAxis = chart.xAxes.push(
+                            am5xy.CategoryAxis.new(root, {
+                                categoryField: "date",
+                                renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 25 }),
+                                tooltip: am5.Tooltip.new(root, {})
+                            })
+                        );
+
+                        xAxis.data.setAll(days.map(d => ({ date: d })));
+
+                        // ===== SAFE Y AXIS =====
+                        var maxPlanned = Math.max(...plannedData);
+                        var maxActual  = Math.max(...actualData);
+
+                        var yAxis = chart.yAxes.push(
+                            am5xy.ValueAxis.new(root, {
+                                min: 0,
+                                max: (maxPlanned === 0 && maxActual > 0) ? maxActual : undefined,
+                                strictMinMax: maxPlanned === 0 && maxActual > 0,
+                                renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 })
+                            })
+                        );
+
+                        var yAxisRight = chart.yAxes.push(
+                            am5xy.ValueAxis.new(root, {
+                                min: 0,
+                                max: 120,
+                                strictMinMax: true,
+                                renderer: am5xy.AxisRendererY.new(root, {
+                                    opposite: true,
+                                    strokeOpacity: 0.1
+                                })
+                            })
+                        );
+
+                        // ===== PLANNED (OPTIONAL) =====
+                        if (maxPlanned > 0) {
+                            var planSeries = chart.series.push(
+                                am5xy.ColumnSeries.new(root, {
+                                    name: "Planned",
+                                    xAxis: xAxis,
+                                    yAxis: yAxis,
+                                    valueYField: "planned",
+                                    categoryXField: "date",
+                                    tooltip: am5.Tooltip.new(root, {
+                                        labelText: "{name}: {valueY}"
+                                    })
+                                })
+                            );
+
+                            planSeries.columns.template.setAll({
+                                fill: am5.color("#36A2EB"),
+                                width: am5.percent(80)
+                            });
+
+                            planSeries.data.setAll(
+                                days.map((d, i) => ({
+                                    date: d,
+                                    planned: plannedData[i] || 0
+                                }))
+                            );
+                        }
+
+                        // ===== ACTUAL =====
+                        var actualSeries = chart.series.push(
+                            am5xy.ColumnSeries.new(root, {
+                                name: "Actual",
+                                xAxis: xAxis,
+                                yAxis: yAxis,
+                                valueYField: "actual",
+                                categoryXField: "date",
+                                tooltip: am5.Tooltip.new(root, {
+                                    labelText: "{name}: {valueY}"
+                                })
+                            })
+                        );
+
+                        actualSeries.columns.template.setAll({
+                            fill: am5.color("#FF9F40"),
+                            width: am5.percent(80)
+                        });
+
+                        actualSeries.data.setAll(
+                            days.map((d, i) => ({
+                                date: d,
+                                actual: actualData[i] || 0
+                            }))
+                        );
+
+                        // ===== PERCENTAGE =====
+                        var percentageSeries = chart.series.push(
+                            am5xy.LineSeries.new(root, {
+                                name: "Percentage Accuracy",
+                                xAxis: xAxis,
+                                yAxis: yAxisRight,
+                                valueYField: "percentage",
+                                categoryXField: "date",
+                                stroke: am5.color(0x000000),
+                                tooltip: am5.Tooltip.new(root, {
+                                    labelText: "{valueY}%"
+                                })
+                            })
+                        );
+
+                        percentageSeries.strokes.template.setAll({ strokeWidth: 3 });
+
+                        percentageSeries.data.setAll(
+                            days.map((d, i) => ({
+                                date: d,
+                                percentage: percentageData[i] || 0
+                            }))
+                        );
+
+                        percentageSeries.bullets.push(function (root, series, dataItem) {
+                            var value = dataItem.dataContext.percentage;
+                            return am5.Bullet.new(root, {
+                                sprite: am5.Circle.new(root, {
+                                    radius: 5,
+                                    fill: value >= 100
+                                        ? am5.color(0x00ff00)
+                                        : am5.color(0xff0000),
+                                    stroke: series.get("stroke"),
+                                    strokeWidth: 3
+                                })
+                            });
+                        });
+
+                        // ===== LEGEND & CURSOR =====
+                        var legend = chart.children.push(
+                            am5.Legend.new(root, {
+                                centerX: am5.p50,
+                                x: am5.p50
+                            })
+                        );
+                        legend.data.setAll(chart.series.values);
+
+                        chart.set("cursor",
+                            am5xy.XYCursor.new(root, {
+                                behavior: "none",
+                                xAxis: xAxis
+                            })
+                        );
+
+                        chart.appear(1000, 100);
+                    }
+
+                    // ===============================
+                    // DATA FROM BACKEND
+                    // ===============================
+                    const otdcDailyByCC = @json($otdcDailyByCC);
+
+                    const days = generateMonthDays();
+
+                    Object.keys(otdcDailyByCC).forEach(cc => {
+
+                        const rows = otdcDailyByCC[cc];
+                        const slug = cc.toLowerCase().replace(/[^a-z0-9]/g, "_");
+
+                        // MAP BACKEND DATA → DAY INDEX
+                        const plannedMap = {};
+                        const actualMap  = {};
+
+                        rows.dates.forEach((dateStr, i) => {
+                            const day = new Date(dateStr).getDate(); // 1–31
+                            plannedMap[day] = rows.planned[i] || 0;
+                            actualMap[day]  = rows.actual[i]  || 0;
+                        });
+
+                        const planned = days.map(d => plannedMap[d] ?? 0);
+                        const actual  = days.map(d => actualMap[d]  ?? 0);
+
+                        const percentage = planned.map((p, i) =>
+                            p > 0 ? Math.min((actual[i] / p) * 100, 100) : 0
+                        );
+
+                        createPMDailyChart(slug, days, planned, actual, percentage);
+                    });
+
+                });
+            </script>
+            {{-- <div class="col-lg-6 mb-2">
                 <div class="card h-100">
                     <div class="card-header">
                         <h3 class="card-title mb-0">Stock Status</h3>
@@ -121,8 +375,12 @@
                         @endif
                     </div>
                 </div>
-            </div>
+            </div> --}}
         </div>
+
+
+
+
 
         {{-- TOP ITEMS (tetap table) --}}
         <div class="row g-3 mt-1">

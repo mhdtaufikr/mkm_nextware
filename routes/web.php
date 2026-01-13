@@ -11,6 +11,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\APIEndpointController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryItemController;
+use App\Http\Controllers\PlanningController;
 
 
 
@@ -81,12 +82,17 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('inventory-item')->group(function () {
         Route::get('/', [InventoryItemController::class, 'index'])->name('inventory-item.index');
         Route::post('/sync', [InventoryItemController::class, 'sync'])->name('inventory-item.sync');
-
-        // optional kalau mau modal edit (CRUD manual)
         Route::get('/{id}', [InventoryItemController::class, 'show'])->name('inventory-item.show');
         Route::post('/', [InventoryItemController::class, 'store'])->name('inventory-item.store');
         Route::put('/{id}', [InventoryItemController::class, 'update'])->name('inventory-item.update');
         Route::delete('/{id}', [InventoryItemController::class, 'destroy'])->name('inventory-item.destroy');
+    });
+
+    Route::prefix('planning')->name('planning.')->group(function () {
+        Route::get('/', [PlanningController::class, 'index'])->name('index');
+        Route::get('/meta', [PlanningController::class, 'meta'])->name('meta');
+        Route::get('/table', [PlanningController::class, 'table'])->name('table');
+        Route::post('/upsert', [PlanningController::class, 'upsert'])->name('upsert');
     });
 
 });
