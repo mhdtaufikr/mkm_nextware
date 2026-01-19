@@ -66,7 +66,7 @@ class HomeController extends Controller
             ->groupBy('cutting_center', DB::raw('DAY(plan_date)'));
 
         /**
-         * ACTUAL (JSON-safe, NULL-proof, filtered by current month + STATUS DONE)
+         * ACTUAL - Pakai external_created_at untuk tanggal transaksi asli
          */
         $actualBase = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
@@ -78,14 +78,19 @@ class HomeController extends Controller
                         'UNKNOWN'
                     ) as cutting_center
                 "),
-                DB::raw('DAY(o.created_at) as day'),
+                // ✅ GUNAKAN external_created_at, fallback ke created_at
+                DB::raw('DAY(COALESCE(o.external_created_at, o.created_at)) as day'),
                 DB::raw('0 as plan_qty'),
                 DB::raw('COALESCE(od.qty_process, od.qty) as act_qty')
             )
             ->whereRaw('LOWER(o.type) = ?', [$type])
             ->where('o.external_location_id', $externalId)
-            ->whereRaw('LOWER(od.status) = ?', ['done'])  // ✅ Filter status done
-            ->whereBetween(DB::raw('DATE(o.created_at)'), [$startOfMonth, $endOfMonth]);
+            ->whereRaw('LOWER(od.status) = ?', ['done'])
+            // ✅ Filter berdasarkan external_created_at
+            ->whereBetween(
+                DB::raw('DATE(COALESCE(o.external_created_at, o.created_at))'),
+                [$startOfMonth, $endOfMonth]
+            );
 
         $actual = DB::query()
             ->fromSub($actualBase, 'x')
@@ -128,5 +133,6 @@ class HomeController extends Controller
 
         return $result;
     }
+
 
 }
