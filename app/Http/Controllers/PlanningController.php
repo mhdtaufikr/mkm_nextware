@@ -59,21 +59,29 @@ class PlanningController extends Controller
             ->pluck('cutting_center')
             ->values();
 
-        // 2. Ambil code dari order_details untuk location ini
-        $codes = DB::table('order_details as od')
-            ->join('orders as o', 'o.id', '=', 'od.order_id')
-            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
-            ->where('loc.location_code', $locationCode)
-            ->select('od.code')
+        // ✅ 2. Ambil code dari inventory_items (bukan order_details)
+        $codes = DB::table('inventory_items')
+            ->where('location_code', $locationCode)
+            ->whereNotNull('code')
+            ->where('code', '<>', '')
+            ->select('code')
             ->distinct()
-            ->orderBy('od.code')
+            ->orderBy('code')
             ->pluck('code');
 
         // 3. Group manual: cutting_center => codes
+        // ✅ Filter codes per cutting_center untuk konsistensi
         $groups = collect();
 
         foreach ($cuttingCenters as $cc) {
-            $groups[$cc] = $codes->map(fn ($c) => (object)['code' => $c]);
+            // Ambil codes yang sesuai dengan cutting_center ini
+            $ccCodes = DB::table('inventory_items')
+                ->where('location_code', $locationCode)
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) = ?", [$cc])
+                ->distinct()
+                ->pluck('code');
+
+            $groups[$cc] = $ccCodes->map(fn ($c) => (object)['code' => $c]);
         }
 
         /**
@@ -162,5 +170,4 @@ class PlanningController extends Controller
             'updated_at' => $row->updated_at?->toDateTimeString(),
         ]);
     }
-
 }
