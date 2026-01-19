@@ -45,53 +45,41 @@ class PlanningController extends Controller
 
         $locationCode = $request->query('location_code');
         $month = $request->query('month');
-        $type = $request->query('type'); // inbound | outbound
-
+        $type = $request->query('type');
 
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end   = (clone $start)->endOfMonth();
 
-        /**
-         * Ambil cutting_center + code
-         * Source:
-         * - view_inventory_item_cutting_center_by_location
-         * - order_details (real transaction)
-         */
-       // 1. Ambil cutting center valid untuk location
+        // 1. Ambil cutting center valid untuk location
         $cuttingCenters = DB::table('view_inventory_item_cutting_center_by_location')
-        ->where('location_code', $locationCode)
-        ->whereNotNull('cutting_center')
-        ->where('cutting_center', '<>', '')
-        ->distinct()
-        ->pluck('cutting_center')
-        ->values();
+            ->where('location_code', $locationCode)
+            ->whereNotNull('cutting_center')
+            ->where('cutting_center', '<>', '')
+            ->distinct()
+            ->pluck('cutting_center')
+            ->values();
 
         // 2. Ambil code dari order_details untuk location ini
         $codes = DB::table('order_details as od')
-        ->join('orders as o', 'o.id', '=', 'od.order_id')
-        ->where('o.external_location_id', function ($q) use ($locationCode) {
-            $q->select('external_id')
-            ->from('locations')
-            ->where('location_code', $locationCode)
-            ->limit(1);
-        })
-        ->select('od.code')
-        ->distinct()
-        ->orderBy('od.code')
-        ->pluck('code');
+            ->join('orders as o', 'o.id', '=', 'od.order_id')
+            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+            ->where('loc.location_code', $locationCode)
+            ->select('od.code')
+            ->distinct()
+            ->orderBy('od.code')
+            ->pluck('code');
 
         // 3. Group manual: cutting_center => codes
         $groups = collect();
 
         foreach ($cuttingCenters as $cc) {
-        $groups[$cc] = $codes->map(fn ($c) => (object)['code' => $c]);
+            $groups[$cc] = $codes->map(fn ($c) => (object)['code' => $c]);
         }
-
 
         /**
          * Ambil planning existing
          */
-            $plans = Planning::query()
+        $plans = Planning::query()
             ->where('type', $type)
             ->where('location_code', $locationCode)
             ->whereBetween('plan_date', [
@@ -99,7 +87,6 @@ class PlanningController extends Controller
                 $end->toDateString(),
             ])
             ->get();
-
 
         /**
          * Map: cutting_center -> code -> date -> qty
@@ -130,12 +117,11 @@ class PlanningController extends Controller
         $html = view('planning._table', [
             'location_code' => $locationCode,
             'month' => $month,
-            'type' => $type, // <—— ini penting
+            'type' => $type,
             'dates' => $dates,
             'groups' => $groups,
             'qtyMap' => $qtyMap,
         ])->render();
-
 
         return response()->json(['html' => $html]);
     }
@@ -154,27 +140,15 @@ class PlanningController extends Controller
             'qty' => ['required', 'integer', 'min:0'],
         ]);
 
-
-        // validasi master
-        $exists = DB::table('view_inventory_item_cutting_center_by_location')
-            ->where('location_code', $request->location_code)
-            ->where('cutting_center', $request->cutting_center)
-            ->where('code', $request->code)
-            ->exists();
-
-        if (!$exists) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'Master location / cutting_center / code tidak valid.',
-            ], 422);
-        }
+        // ✅ Langsung save tanpa validasi master
+        // Planning bisa dibuat untuk future items yang belum ada di inventory
 
         $row = Planning::updateOrCreate(
             [
                 'location_code' => $request->location_code,
                 'cutting_center' => $request->cutting_center,
                 'code' => $request->code,
-                'type' => $request->type, // inbound / outbound
+                'type' => $request->type,
                 'plan_date' => $request->plan_date,
             ],
             [
@@ -182,11 +156,11 @@ class PlanningController extends Controller
             ]
         );
 
-
         return response()->json([
             'ok' => true,
             'id' => $row->id,
             'updated_at' => $row->updated_at?->toDateTimeString(),
         ]);
     }
+
 }
