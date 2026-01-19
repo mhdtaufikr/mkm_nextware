@@ -63,6 +63,8 @@ class SyncOrderItemsToday extends Command
 
         $types = ['inbound', 'outbound'];
         $totalInserted = 0;
+        $totalUpdated = 0;
+        $totalSkipped = 0;
 
         foreach ($locations as $loc) {
             if (!$loc->external_id) {
@@ -94,33 +96,61 @@ class SyncOrderItemsToday extends Command
                         continue;
                     }
 
-                    DB::transaction(function () use ($orders, &$totalInserted) {
+                    DB::transaction(function () use ($orders, &$totalInserted, &$totalUpdated, &$totalSkipped) {
 
                         foreach ($orders as $row) {
                             $externalId = data_get($row, '_id');
 
-                            // 🧠 kalau order sudah ada → SKIP (no update)
-                            if (Order::where('external_id', $externalId)->exists()) {
-                                continue;
+                            // ✅ Cek apakah order sudah ada
+                            $existingOrder = Order::where('external_id', $externalId)->first();
+
+                            if ($existingOrder) {
+                                // ✅ UPDATE order yang sudah ada
+                                $existingOrder->update([
+                                    'ref_number' => data_get($row, 'refNumber'),
+                                    'type' => data_get($row, 'type'),
+                                    'status' => data_get($row, 'status'),
+                                    'customer_name' => data_get($row, 'customer_name'),
+                                    'external_location_id' => data_get($row, 'location_id'),
+                                    'organization_id' => data_get($row, 'organization_id'),
+                                    'total' => data_get($row, 'total') ?? 0,
+                                    'total_item' => data_get($row, 'total_item') ?? 0,
+                                    'external_created_at' => data_get($row, 'created_at'),
+                                    'external_updated_at' => data_get($row, 'updated_at'),
+                                    'raw_item' => data_get($row, 'raw_item'),
+                                    'custom_field' => data_get($row, 'custom_field'),
+                                    'raw_payload' => $row,
+                                ]);
+
+                                $order = $existingOrder;
+
+                                // ✅ Hapus detail lama, insert ulang (untuk handle perubahan qty/status)
+                                OrderDetail::where('order_id', $order->id)->delete();
+
+                                $totalUpdated++;
+                            } else {
+                                // ✅ INSERT order baru
+                                $order = Order::create([
+                                    'external_id' => $externalId,
+                                    'ref_number' => data_get($row, 'refNumber'),
+                                    'type' => data_get($row, 'type'),
+                                    'status' => data_get($row, 'status'),
+                                    'customer_name' => data_get($row, 'customer_name'),
+                                    'external_location_id' => data_get($row, 'location_id'),
+                                    'organization_id' => data_get($row, 'organization_id'),
+                                    'total' => data_get($row, 'total') ?? 0,
+                                    'total_item' => data_get($row, 'total_item') ?? 0,
+                                    'external_created_at' => data_get($row, 'created_at'),
+                                    'external_updated_at' => data_get($row, 'updated_at'),
+                                    'raw_item' => data_get($row, 'raw_item'),
+                                    'custom_field' => data_get($row, 'custom_field'),
+                                    'raw_payload' => $row,
+                                ]);
+
+                                $totalInserted++;
                             }
 
-                            $order = Order::create([
-                                'external_id' => $externalId,
-                                'ref_number' => data_get($row, 'refNumber'),
-                                'type' => data_get($row, 'type'),
-                                'status' => data_get($row, 'status'),
-                                'customer_name' => data_get($row, 'customer_name'),
-                                'external_location_id' => data_get($row, 'location_id'),
-                                'organization_id' => data_get($row, 'organization_id'),
-                                'total' => data_get($row, 'total') ?? 0,
-                                'total_item' => data_get($row, 'total_item') ?? 0,
-                                'external_created_at' => data_get($row, 'created_at'),
-                                'external_updated_at' => data_get($row, 'updated_at'),
-                                'raw_item' => data_get($row, 'raw_item'),
-                                'custom_field' => data_get($row, 'custom_field'),
-                                'raw_payload' => $row,
-                            ]);
-
+                            // ✅ INSERT order_details (selalu fresh karena sudah di-delete atau baru)
                             foreach (data_get($row, 'item', []) as $item) {
                                 OrderDetail::create([
                                     'order_id' => $order->id,
@@ -137,8 +167,6 @@ class SyncOrderItemsToday extends Command
                                     'raw_payload' => $item,
                                 ]);
                             }
-
-                            $totalInserted++;
                         }
 
                     });
@@ -150,7 +178,9 @@ class SyncOrderItemsToday extends Command
             }
         }
 
-        $this->info("DONE. Total Inserted Orders: {$totalInserted}");
+        $this->info("DONE.");
+        $this->info("Total Inserted: {$totalInserted}");
+        $this->info("Total Updated: {$totalUpdated}");
         return self::SUCCESS;
     }
 }
