@@ -61,16 +61,19 @@ class PlanningController extends Controller
                 ->pluck('cutting_center')
                 ->values();
         } else {
-            // OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
-            $cuttingCenters = DB::table('order_details as od')
+            // ✅ OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
+            $subquery = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
                 ->where('loc.location_code', $locationCode)
                 ->whereRaw('LOWER(o.type) = ?', ['outbound'])
                 ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) as rack'))
-                ->whereNotNull(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack"))'))
-                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) <> ?', [''])
-                ->distinct()
+                ->distinct();
+
+            $cuttingCenters = DB::table(DB::raw("({$subquery->toSql()}) as racks"))
+                ->mergeBindings($subquery)
+                ->whereNotNull('rack')
+                ->where('rack', '<>', '')
                 ->pluck('rack')
                 ->values();
         }
