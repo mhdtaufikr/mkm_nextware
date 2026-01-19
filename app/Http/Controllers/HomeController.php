@@ -66,19 +66,14 @@ class HomeController extends Controller
             ->groupBy('cutting_center', DB::raw('DAY(plan_date)'));
 
         /**
-         * ✅ ACTUAL - Tanpa join ke inventory_items
-         * Ambil cutting_center dari order_details.raw_payload atau bisa dari lookup sederhana
+         * ✅ ACTUAL - Ambil dari product.custom_field.cutting_center
          */
         $actualBase = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
             ->select(
                 DB::raw("
                     COALESCE(
-                        JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.cutting_center')),
-                        (SELECT JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center'))
-                         FROM inventory_items
-                         WHERE code = od.code
-                         LIMIT 1),
+                        JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.custom_field.cutting_center')),
                         'UNKNOWN'
                     ) as cutting_center
                 "),
