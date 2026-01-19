@@ -22,6 +22,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('inventory-item:sync')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+
+        $schedule->command('order-items:sync')
+        ->everyFiveMinutes()
+        ->withoutOverlapping();
     }
 
     /**

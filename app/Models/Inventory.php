@@ -44,4 +44,10 @@ class Inventory extends Model
         'api_updated_at' => 'datetime',
         'last_calculated' => 'datetime',
     ];
+
+        public function reorderLevel()
+    {
+        return $this->hasOne(InventoryReorderLevel::class);
+    }
+
 }

@@ -23,39 +23,46 @@
         </a>
 
         <!-- ================= CORE OPS ================= -->
-        <div class="sidenav-menu-heading">Core Ops</div>
+<div class="sidenav-menu-heading">Core Ops</div>
 
-        <a class="nav-link collapsed"
-           href="javascript:void(0);"
-           data-bs-toggle="collapse"
-           data-bs-target="#collapseCoreOps"
-           aria-expanded="{{ nav_show(['planning*','receiving*','delivery*','receiving-delivery*','inout*']) ? 'true' : 'false' }}"
-           aria-controls="collapseCoreOps">
+<a class="nav-link collapsed"
+   href="javascript:void(0);"
+   data-bs-toggle="collapse"
+   data-bs-target="#collapseCoreOps"
+   aria-expanded="{{ nav_show(['planning*','receiving*','delivery*','receiving-delivery*','inout*','inventory-reorder*']) ? 'true' : 'false' }}"
+   aria-controls="collapseCoreOps">
 
-          <div class="nav-link-icon">
-            <i data-feather="grid"></i>
-          </div>
+  <div class="nav-link-icon">
+    <i data-feather="grid"></i>
+  </div>
 
-          Core Ops
-          <div class="sidenav-collapse-arrow">
-            <i class="fas fa-angle-down"></i>
-          </div>
-        </a>
+  Core Ops
+  <div class="sidenav-collapse-arrow">
+    <i class="fas fa-angle-down"></i>
+  </div>
+</a>
 
-        <div class="collapse {{ nav_show(['planning*','receiving*','delivery*','receiving-delivery*','inout*']) }}"
-             id="collapseCoreOps"
-             data-bs-parent="#accordionSidenav">
+<div class="collapse {{ nav_show(['planning*','receiving*','delivery*','receiving-delivery*','inout*','inventory-reorder*']) }}"
+     id="collapseCoreOps"
+     data-bs-parent="#accordionSidenav">
 
-          <nav class="sidenav-menu-nested nav">
+  <nav class="sidenav-menu-nested nav">
 
-            <a class="nav-link {{ nav_active('planning*') }}"
-               href="{{ url('/planning') }}">
-               <i data-feather="truck" class="me-2"></i>
-              Planning
-            </a>
+    <a class="nav-link {{ nav_active('planning*') }}"
+       href="{{ url('/planning') }}">
+       <i data-feather="truck" class="me-2"></i>
+      Planning
+    </a>
 
-          </nav>
-        </div>
+    <a class="nav-link {{ nav_active('inventory-reorder*') }}"
+       href="{{ url('/inventory-reorder') }}">
+       <i data-feather="sliders" class="me-2"></i>
+      Re-Order Level
+    </a>
+
+  </nav>
+</div>
+
 
         @if ($isAdmin)
 
@@ -88,10 +95,13 @@
             'location', 'location/*',
             'inventory', 'inventory/*',
             'inventory-item', 'inventory-item/*',
+            'order-item', 'order-item/*',
             'api-endpoint', 'api-endpoint/*'
-          ]) }}"
+                ]) }}"
                id="collapseMasterData"
                data-bs-parent="#accordionSidenav">
+
+
 
             <nav class="sidenav-menu-nested nav">
 
@@ -112,6 +122,13 @@
                 <i data-feather="layers" class="me-2"></i>
                 Inventory Item
               </a>
+
+              <a class="nav-link {{ nav_active(['order-item', 'order-item/*']) }}"
+                href="{{ url('/order-items') }}">
+                <i data-feather="shopping-cart" class="me-2"></i>
+                Order Item
+                </a>
+
 
               <a class="nav-link {{ nav_active('api-endpoint*') }}"
                  href="{{ url('/api-endpoint') }}">

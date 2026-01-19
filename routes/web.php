@@ -12,6 +12,9 @@ use App\Http\Controllers\APIEndpointController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\InventoryReorderLevelController;
+
 
 
 
@@ -79,6 +82,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/sync', [InventoryController::class, 'sync'])->name('sync');
     });
 
+    Route::prefix('order-items')->name('order-items.')->group(function () {
+        Route::get('/', [OrderItemController::class, 'index'])->name('index');
+        Route::post('/sync', [OrderItemController::class, 'sync'])->name('sync');
+        Route::get('/{id}/detail', [OrderItemController::class, 'detail'])->name('detail');
+    });
+
     Route::prefix('inventory-item')->group(function () {
         Route::get('/', [InventoryItemController::class, 'index'])->name('inventory-item.index');
         Route::post('/sync', [InventoryItemController::class, 'sync'])->name('inventory-item.sync');
@@ -93,6 +102,20 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/meta', [PlanningController::class, 'meta'])->name('meta');
         Route::get('/table', [PlanningController::class, 'table'])->name('table');
         Route::post('/upsert', [PlanningController::class, 'upsert'])->name('upsert');
+    });
+
+    Route::prefix('inventory-reorder')
+    ->name('inventory-reorder.')
+    ->group(function () {
+
+        Route::get('/', [InventoryReorderLevelController::class, 'index'])->name('index');
+        Route::get('/create', [InventoryReorderLevelController::class, 'create'])->name('create');
+        Route::post('/', [InventoryReorderLevelController::class, 'store'])->name('store');
+
+        Route::get('/{id}/edit', [InventoryReorderLevelController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [InventoryReorderLevelController::class, 'update'])->name('update');
+        Route::post('/autosave', [InventoryReorderLevelController::class, 'autosave'])->name('autosave');
+        Route::delete('/{id}', [InventoryReorderLevelController::class, 'destroy'])->name('destroy');
     });
 
 });
