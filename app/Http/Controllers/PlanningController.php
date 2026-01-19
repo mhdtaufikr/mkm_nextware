@@ -50,36 +50,77 @@ class PlanningController extends Controller
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end   = (clone $start)->endOfMonth();
 
-        // 1. Ambil cutting center valid untuk location
-        $cuttingCenters = DB::table('view_inventory_item_cutting_center_by_location')
-            ->where('location_code', $locationCode)
-            ->whereNotNull('cutting_center')
-            ->where('cutting_center', '<>', '')
-            ->distinct()
-            ->pluck('cutting_center')
-            ->values();
+        // ✅ 1. Ambil cutting_center berdasarkan type
+        if ($type === 'inbound') {
+            // INBOUND: Ambil dari inventory_items (SCI, USC, AAP, dll)
+            $cuttingCenters = DB::table('view_inventory_item_cutting_center_by_location')
+                ->where('location_code', $locationCode)
+                ->whereNotNull('cutting_center')
+                ->where('cutting_center', '<>', '')
+                ->distinct()
+                ->pluck('cutting_center')
+                ->values();
+        } else {
+            // OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
+            $cuttingCenters = DB::table('order_details as od')
+                ->join('orders as o', 'o.id', '=', 'od.order_id')
+                ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+                ->where('loc.location_code', $locationCode)
+                ->whereRaw('LOWER(o.type) = ?', ['outbound'])
+                ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) as rack'))
+                ->whereNotNull(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack"))'))
+                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) <> ?', [''])
+                ->distinct()
+                ->pluck('rack')
+                ->values();
+        }
 
-        // ✅ 2. Ambil code dari inventory_items (bukan order_details)
-        $codes = DB::table('inventory_items')
-            ->where('location_code', $locationCode)
-            ->whereNotNull('code')
-            ->where('code', '<>', '')
-            ->select('code')
-            ->distinct()
-            ->orderBy('code')
-            ->pluck('code');
+        // ✅ 2. Ambil code berdasarkan type
+        if ($type === 'inbound') {
+            // INBOUND: Ambil semua code dari inventory_items
+            $codes = DB::table('inventory_items')
+                ->where('location_code', $locationCode)
+                ->whereNotNull('code')
+                ->where('code', '<>', '')
+                ->select('code')
+                ->distinct()
+                ->orderBy('code')
+                ->pluck('code');
+        } else {
+            // OUTBOUND: Ambil code yang pernah keluar
+            $codes = DB::table('order_details as od')
+                ->join('orders as o', 'o.id', '=', 'od.order_id')
+                ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+                ->where('loc.location_code', $locationCode)
+                ->whereRaw('LOWER(o.type) = ?', ['outbound'])
+                ->select('od.code')
+                ->distinct()
+                ->orderBy('od.code')
+                ->pluck('code');
+        }
 
-        // 3. Group manual: cutting_center => codes
-        // ✅ Filter codes per cutting_center untuk konsistensi
+        // ✅ 3. Group manual berdasarkan type
         $groups = collect();
 
         foreach ($cuttingCenters as $cc) {
-            // Ambil codes yang sesuai dengan cutting_center ini
-            $ccCodes = DB::table('inventory_items')
-                ->where('location_code', $locationCode)
-                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) = ?", [$cc])
-                ->distinct()
-                ->pluck('code');
+            if ($type === 'inbound') {
+                // INBOUND: Filter codes per cutting_center dari inventory
+                $ccCodes = DB::table('inventory_items')
+                    ->where('location_code', $locationCode)
+                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) = ?", [$cc])
+                    ->distinct()
+                    ->pluck('code');
+            } else {
+                // OUTBOUND: Filter codes per rack
+                $ccCodes = DB::table('order_details as od')
+                    ->join('orders as o', 'o.id', '=', 'od.order_id')
+                    ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+                    ->where('loc.location_code', $locationCode)
+                    ->whereRaw('LOWER(o.type) = ?', ['outbound'])
+                    ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) = ?', [$cc])
+                    ->distinct()
+                    ->pluck('od.code');
+            }
 
             $groups[$cc] = $ccCodes->map(fn ($c) => (object)['code' => $c]);
         }

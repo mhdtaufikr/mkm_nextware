@@ -66,25 +66,25 @@ class HomeController extends Controller
             ->groupBy('cutting_center', DB::raw('DAY(plan_date)'));
 
         /**
-         * ✅ ACTUAL - Semua ambil dari inventory_items untuk consistency
+         * ✅ ACTUAL - Beda logic untuk inbound vs outbound
          */
         $actualBase = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
             ->select(
                 DB::raw("
-                    COALESCE(
-                        CASE
-                            WHEN LOWER(o.type) = 'inbound' THEN
-                                JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.custom_field.cutting_center'))
-                            ELSE NULL
-                        END,
-                        (SELECT JSON_UNQUOTE(JSON_EXTRACT(ii.custom_field, '$.cutting_center'))
-                         FROM inventory_items ii
-                         WHERE ii.code = od.code
-                         AND ii.location_code = '{$locationCode}'
-                         LIMIT 1),
-                        'UNKNOWN'
-                    ) as cutting_center
+                    CASE
+                        WHEN LOWER(o.type) = 'inbound' THEN
+                            COALESCE(
+                                JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.custom_field.cutting_center')),
+                                'UNKNOWN'
+                            )
+                        WHEN LOWER(o.type) = 'outbound' THEN
+                            COALESCE(
+                                JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.rack')),
+                                'UNKNOWN'
+                            )
+                        ELSE 'UNKNOWN'
+                    END as cutting_center
                 "),
                 DB::raw('DAY(COALESCE(o.external_created_at, o.created_at)) as day'),
                 DB::raw('0 as plan_qty'),
