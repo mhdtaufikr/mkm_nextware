@@ -66,19 +66,22 @@ class HomeController extends Controller
             ->groupBy('cutting_center', DB::raw('DAY(plan_date)'));
 
         /**
-         * ACTUAL - Pakai external_created_at untuk tanggal transaksi asli
+         * ✅ ACTUAL - Tanpa join ke inventory_items
+         * Ambil cutting_center dari order_details.raw_payload atau bisa dari lookup sederhana
          */
         $actualBase = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
-            ->join('inventory_items as ii', 'ii.code', '=', 'od.code')
             ->select(
                 DB::raw("
                     COALESCE(
-                        JSON_UNQUOTE(JSON_EXTRACT(ii.custom_field,'$.cutting_center')),
+                        JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.cutting_center')),
+                        (SELECT JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center'))
+                         FROM inventory_items
+                         WHERE code = od.code
+                         LIMIT 1),
                         'UNKNOWN'
                     ) as cutting_center
                 "),
-                // ✅ GUNAKAN external_created_at, fallback ke created_at
                 DB::raw('DAY(COALESCE(o.external_created_at, o.created_at)) as day'),
                 DB::raw('0 as plan_qty'),
                 DB::raw('COALESCE(od.qty_process, od.qty) as act_qty')
@@ -86,7 +89,6 @@ class HomeController extends Controller
             ->whereRaw('LOWER(o.type) = ?', [$type])
             ->where('o.external_location_id', $externalId)
             ->whereRaw('LOWER(od.status) = ?', ['done'])
-            // ✅ Filter berdasarkan external_created_at
             ->whereBetween(
                 DB::raw('DATE(COALESCE(o.external_created_at, o.created_at))'),
                 [$startOfMonth, $endOfMonth]
@@ -133,6 +135,7 @@ class HomeController extends Controller
 
         return $result;
     }
+
 
 
 }
