@@ -11,113 +11,117 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class PlanningImport implements ToCollection, WithHeadingRow
 {
-    protected $stats = [
+    protected array $stats = [
         'inserted' => 0,
-        'updated' => 0,
-        'skipped' => 0,
+        'updated'  => 0,
+        'skipped'  => 0,
     ];
+
+    protected string $month; // format Y-m
+
+    public function __construct(string $month)
+    {
+        $this->month = $month;
+    }
 
     public function collection(Collection $rows)
     {
+        $baseMonth = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
+
         DB::beginTransaction();
 
         try {
-            foreach ($rows as $row) {
-                // Get required fields
-                $code = $row['group_no'] ?? null;
-                $cuttingCenter = $row['cutting_center'] ?? null;
-                $destination = $row['destination'] ?? null;
-                $type = $row['type'] ?? null;
+            foreach ($rows as $rowIndex => $row) {
 
-                // Validate required fields
-                if (empty($code) || empty($cuttingCenter) || empty($destination) || empty($type)) {
+                // =========================
+                // 1️⃣ REQUIRED FIELDS
+                // =========================
+                $code          = trim((string) ($row['group_no'] ?? ''));
+                $cuttingCenter = trim((string) ($row['cutting_center'] ?? ''));
+                $destination   = trim((string) ($row['destination'] ?? ''));
+                $type           = trim((string) ($row['type'] ?? ''));
+
+                if (!$code || !$cuttingCenter || !$destination || !$type) {
                     $this->stats['skipped']++;
                     continue;
                 }
 
-                // Get all column keys (untuk ambil tanggal)
-                $allKeys = $row->keys()->toArray();
+                // =========================
+                // 2️⃣ LOOP DATE COLUMNS
+                // =========================
+                foreach ($row as $header => $qtyRaw) {
 
-                // Process each date column (skip first 4 columns)
-                $dayCounter = 1;
-                foreach ($allKeys as $key) {
-                    // Skip metadata columns
-                    if (in_array($key, ['group_no', 'cutting_center', 'destination', 'type'])) {
+                    // skip metadata columns
+                    if (in_array($header, ['group_no', 'cutting_center', 'destination', 'type'])) {
                         continue;
                     }
 
-                    // Get qty value
-                    $qty = $row[$key] ?? null;
-
-                    // Skip empty cells
-                    if ($qty === null || $qty === '' || $qty === 0) {
-                        $dayCounter++;
+                    // header HARUS numeric day (1–31)
+                    if (!is_numeric($header)) {
                         continue;
                     }
 
-                    $qty = (int) $qty;
-
-                    // Skip if qty is 0 or negative
-                    if ($qty <= 0) {
-                        $dayCounter++;
+                    $day = (int) $header;
+                    if ($day < 1 || $day > 31) {
                         continue;
                     }
 
-                    // Build plan_date from current year-month and day counter
+                    // qty boleh 0 (VALID UPDATE)
+                    if ($qtyRaw === null || $qtyRaw === '') {
+                        continue;
+                    }
+
+                    $qty = (int) $qtyRaw;
+
+                    // =========================
+                    // 3️⃣ BUILD PLAN DATE
+                    // =========================
                     try {
-                        // Ambil year-month dari sekarang atau bisa dari parameter
-                        $yearMonth = date('Y-m');
-                        $planDate = Carbon::createFromFormat('Y-m-d',
-                            $yearMonth . '-' . str_pad($dayCounter, 2, '0', STR_PAD_LEFT)
-                        );
-                    } catch (\Exception $e) {
-                        $dayCounter++;
+                        $planDate = $baseMonth->copy()->day($day);
+                    } catch (\Throwable $e) {
+                        $this->stats['skipped']++;
                         continue;
                     }
 
-                    // Check if record exists
+                    // =========================
+                    // 4️⃣ UPSERT (0 = VALID)
+                    // =========================
                     $exists = Planning::where([
-                        'location_code' => $destination,
+                        'location_code'  => $destination,
                         'cutting_center' => $cuttingCenter,
-                        'code' => $code,
-                        'type' => $type,
-                        'plan_date' => $planDate->toDateString(),
+                        'code'            => $code,
+                        'type'            => $type,
+                        'plan_date'       => $planDate->toDateString(),
                     ])->exists();
 
-                    // Insert or update
                     Planning::updateOrCreate(
                         [
-                            'location_code' => $destination,
+                            'location_code'  => $destination,
                             'cutting_center' => $cuttingCenter,
-                            'code' => $code,
-                            'type' => $type,
-                            'plan_date' => $planDate->toDateString(),
+                            'code'            => $code,
+                            'type'            => $type,
+                            'plan_date'       => $planDate->toDateString(),
                         ],
                         [
-                            'qty' => $qty,
+                            'qty' => $qty, // ← 0 AKAN DISIMPAN
                         ]
                     );
 
-                    // Update stats
-                    if ($exists) {
-                        $this->stats['updated']++;
-                    } else {
-                        $this->stats['inserted']++;
-                    }
-
-                    $dayCounter++;
+                    $exists
+                        ? $this->stats['updated']++
+                        : $this->stats['inserted']++;
                 }
             }
 
             DB::commit();
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
         }
     }
 
-    public function getStats()
+    public function getStats(): array
     {
         return $this->stats;
     }
