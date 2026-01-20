@@ -8,7 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RulesController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocationController;
-use App\Http\Controllers\APIEndpointController;
+use App\Http\Controllers\ApiEndpointController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\PlanningController;
@@ -97,12 +97,17 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [InventoryItemController::class, 'destroy'])->name('inventory-item.destroy');
     });
 
-    Route::prefix('planning')->name('planning.')->group(function () {
-        Route::get('/', [PlanningController::class, 'index'])->name('index');
-        Route::get('/meta', [PlanningController::class, 'meta'])->name('meta');
-        Route::get('/table', [PlanningController::class, 'table'])->name('table');
-        Route::post('/upsert', [PlanningController::class, 'upsert'])->name('upsert');
-    });
+    // routes/web.php
+    Route::prefix('planning')->group(function () {
+    Route::get('/', [PlanningController::class, 'index'])->name('planning.index');
+    Route::get('/meta', [PlanningController::class, 'meta'])->name('planning.meta');
+    Route::get('/table', [PlanningController::class, 'table'])->name('planning.table');
+    Route::post('/upsert', [PlanningController::class, 'upsert'])->name('planning.upsert');
+    // ✅ New routes for template & import
+    Route::get('/template/download', [PlanningController::class, 'downloadTemplate'])->name('planning.template.download');
+    Route::post('/import', [PlanningController::class, 'import'])->name('planning.import');
+});
+
 
     Route::prefix('inventory-reorder')
     ->name('inventory-reorder.')

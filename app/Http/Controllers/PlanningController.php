@@ -6,6 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Planning;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Exports\PlanningTemplateExport;
+use App\Imports\PlanningImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PlanningController extends Controller
 {
@@ -51,9 +59,8 @@ class PlanningController extends Controller
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end   = (clone $start)->endOfMonth();
 
-        // ✅ 1. Ambil cutting_center berdasarkan type (SEMUA DARI ORDERS)
+        // Ambil cutting_center berdasarkan type (SEMUA DARI ORDERS)
         if ($type === 'inbound') {
-            // INBOUND: Ambil cutting_center dari order_details.raw_payload.product.custom_field.cutting_center
             $subquery = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -69,7 +76,6 @@ class PlanningController extends Controller
                 ->pluck('cutting_center')
                 ->values();
         } else {
-            // OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
             $subquery = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -86,7 +92,6 @@ class PlanningController extends Controller
                 ->values();
         }
 
-        // ✅ 2. Ambil code berdasarkan type (SEMUA DARI ORDERS)
         $codes = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
             ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -97,12 +102,10 @@ class PlanningController extends Controller
             ->orderBy('od.code')
             ->pluck('code');
 
-        // ✅ 3. Group manual berdasarkan type (SEMUA DARI ORDERS)
         $groups = collect();
 
         foreach ($cuttingCenters as $cc) {
             if ($type === 'inbound') {
-                // INBOUND: Filter codes per cutting_center
                 $ccCodes = DB::table('order_details as od')
                     ->join('orders as o', 'o.id', '=', 'od.order_id')
                     ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -112,7 +115,6 @@ class PlanningController extends Controller
                     ->distinct()
                     ->pluck('od.code');
             } else {
-                // OUTBOUND: Filter codes per rack
                 $ccCodes = DB::table('order_details as od')
                     ->join('orders as o', 'o.id', '=', 'od.order_id')
                     ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -126,9 +128,6 @@ class PlanningController extends Controller
             $groups[$cc] = $ccCodes->map(fn ($c) => (object)['code' => $c]);
         }
 
-        /**
-         * Ambil planning existing
-         */
         $plans = Planning::query()
             ->where('type', $type)
             ->where('location_code', $locationCode)
@@ -138,9 +137,6 @@ class PlanningController extends Controller
             ])
             ->get();
 
-        /**
-         * Map: cutting_center -> code -> date -> qty
-         */
         $qtyMap = [];
         foreach ($plans as $p) {
             $cc   = $p->cutting_center;
@@ -150,9 +146,6 @@ class PlanningController extends Controller
             $qtyMap[$cc][$code][$date] = (int) $p->qty;
         }
 
-        /**
-         * Generate tanggal sebulan
-         */
         $dates = [];
         $cursor = $start->copy();
         while ($cursor->lte($end)) {
@@ -190,9 +183,6 @@ class PlanningController extends Controller
             'qty' => ['required', 'integer', 'min:0'],
         ]);
 
-        // ✅ Langsung save tanpa validasi master
-        // Planning bisa dibuat untuk future items yang belum ada di inventory
-
         $row = Planning::updateOrCreate(
             [
                 'location_code' => $request->location_code,
@@ -211,5 +201,56 @@ class PlanningController extends Controller
             'id' => $row->id,
             'updated_at' => $row->updated_at?->toDateTimeString(),
         ]);
+    }
+
+    public function downloadTemplate(Request $request)
+{
+    $request->validate([
+        'location_code' => ['required', 'string'],
+        'type' => ['required', 'in:inbound,outbound'],
+        'month' => ['required', 'date_format:Y-m'],
+    ]);
+
+    $locationCode = $request->query('location_code');
+    $type = $request->query('type');
+    $month = $request->query('month');
+
+    $filename = "Planning_Template_{$type}_{$locationCode}_{$month}.xlsx";
+
+    return Excel::download(
+        new PlanningTemplateExport($locationCode, $type, $month),
+        $filename
+    );
+}
+
+
+    /**
+     * ✅ Import Planning from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+        ]);
+
+        try {
+            $import = new PlanningImport();
+            Excel::import($import, $request->file('file'));
+
+            $stats = $import->getStats();
+
+            return response()->json([
+                'ok' => true,
+                'inserted' => $stats['inserted'],
+                'updated' => $stats['updated'],
+                'skipped' => $stats['skipped'],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Import failed: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }
