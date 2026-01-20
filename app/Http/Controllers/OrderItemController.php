@@ -19,7 +19,19 @@ class OrderItemController extends Controller
             ->orderBy('location_code')
             ->get();
 
-        $query = Order::query()->latest();
+        $query = Order::query()
+            ->select([
+                'id',
+                'external_id',
+                'ref_number',
+                'type',
+                'status',
+                'external_location_id',
+                'total',
+                'total_item',
+                'external_created_at',
+            ])
+            ->orderByDesc('external_created_at');
 
         if ($request->filled('location_external_id')) {
             $query->where('external_location_id', $request->location_external_id);
@@ -36,13 +48,11 @@ class OrderItemController extends Controller
             ]);
         }
 
-        $orders = $query->limit(1000)->get();
+        $orders = $query->limit(300)->get();
 
-        return view('order_items.index', compact(
-            'locations',
-            'orders'
-        ));
+        return view('order_items.index', compact('locations', 'orders'));
     }
+
 
         public function detail($id)
     {
