@@ -19,10 +19,11 @@ class PlanningController extends Controller
      */
     public function meta()
     {
-        $locations = DB::table('view_inventory_item_cutting_center_by_location')
+        $locations = DB::table('locations')
             ->select('location_code')
             ->whereNotNull('location_code')
             ->where('location_code', '<>', '')
+            ->where('active', 1)
             ->distinct()
             ->orderBy('location_code')
             ->pluck('location_code');
@@ -50,18 +51,25 @@ class PlanningController extends Controller
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end   = (clone $start)->endOfMonth();
 
-        // ✅ 1. Ambil cutting_center berdasarkan type
+        // ✅ 1. Ambil cutting_center berdasarkan type (SEMUA DARI ORDERS)
         if ($type === 'inbound') {
-            // INBOUND: Ambil dari inventory_items (SCI, USC, AAP, dll)
-            $cuttingCenters = DB::table('view_inventory_item_cutting_center_by_location')
-                ->where('location_code', $locationCode)
+            // INBOUND: Ambil cutting_center dari order_details.raw_payload.product.custom_field.cutting_center
+            $subquery = DB::table('order_details as od')
+                ->join('orders as o', 'o.id', '=', 'od.order_id')
+                ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+                ->where('loc.location_code', $locationCode)
+                ->whereRaw('LOWER(o.type) = ?', ['inbound'])
+                ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) as cutting_center'))
+                ->distinct();
+
+            $cuttingCenters = DB::table(DB::raw("({$subquery->toSql()}) as centers"))
+                ->mergeBindings($subquery)
                 ->whereNotNull('cutting_center')
                 ->where('cutting_center', '<>', '')
-                ->distinct()
                 ->pluck('cutting_center')
                 ->values();
         } else {
-            // ✅ OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
+            // OUTBOUND: Ambil dari rack order_details (PRESS A, PRESS B, dll)
             $subquery = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
@@ -78,41 +86,31 @@ class PlanningController extends Controller
                 ->values();
         }
 
-        // ✅ 2. Ambil code berdasarkan type
-        if ($type === 'inbound') {
-            // INBOUND: Ambil semua code dari inventory_items
-            $codes = DB::table('inventory_items')
-                ->where('location_code', $locationCode)
-                ->whereNotNull('code')
-                ->where('code', '<>', '')
-                ->select('code')
-                ->distinct()
-                ->orderBy('code')
-                ->pluck('code');
-        } else {
-            // OUTBOUND: Ambil code yang pernah keluar
-            $codes = DB::table('order_details as od')
-                ->join('orders as o', 'o.id', '=', 'od.order_id')
-                ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
-                ->where('loc.location_code', $locationCode)
-                ->whereRaw('LOWER(o.type) = ?', ['outbound'])
-                ->select('od.code')
-                ->distinct()
-                ->orderBy('od.code')
-                ->pluck('code');
-        }
+        // ✅ 2. Ambil code berdasarkan type (SEMUA DARI ORDERS)
+        $codes = DB::table('order_details as od')
+            ->join('orders as o', 'o.id', '=', 'od.order_id')
+            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+            ->where('loc.location_code', $locationCode)
+            ->whereRaw('LOWER(o.type) = ?', [$type])
+            ->select('od.code')
+            ->distinct()
+            ->orderBy('od.code')
+            ->pluck('code');
 
-        // ✅ 3. Group manual berdasarkan type
+        // ✅ 3. Group manual berdasarkan type (SEMUA DARI ORDERS)
         $groups = collect();
 
         foreach ($cuttingCenters as $cc) {
             if ($type === 'inbound') {
-                // INBOUND: Filter codes per cutting_center dari inventory
-                $ccCodes = DB::table('inventory_items')
-                    ->where('location_code', $locationCode)
-                    ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')) = ?", [$cc])
+                // INBOUND: Filter codes per cutting_center
+                $ccCodes = DB::table('order_details as od')
+                    ->join('orders as o', 'o.id', '=', 'od.order_id')
+                    ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+                    ->where('loc.location_code', $locationCode)
+                    ->whereRaw('LOWER(o.type) = ?', ['inbound'])
+                    ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) = ?', [$cc])
                     ->distinct()
-                    ->pluck('code');
+                    ->pluck('od.code');
             } else {
                 // OUTBOUND: Filter codes per rack
                 $ccCodes = DB::table('order_details as od')
