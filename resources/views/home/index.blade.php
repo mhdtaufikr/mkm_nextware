@@ -80,36 +80,44 @@
                                         <div class="row">
                                             <div class="col-md-8">
                                                 <table class="indicator-table mb-4">
-                                                    <tr>
-                                                        <th>Signal Indicator</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <span class="signal green px-2">G</span> ≥ 95%
-                                                            <span class="signal yellow">Y</span> ≥ 85%
-                                                            <span class="signal red">R</span> < 85%
-                                                        </td>
-                                                    </tr>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center">Signal Indicator</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-center py-3">
+                                                                <span class="signal green">G</span> ≥ 95%
+                                                                <span class="signal yellow mx-3">Y</span> ≥ 85%
+                                                                <span class="signal red mx-3">R</span> < 85%
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
                                                 </table>
                                             </div>
                                             <div class="col-md-4">
                                                 <table class="indicator-table mb-4">
-                                                    <tr>
-                                                        <th>Average OTDP</th>
-                                                        <th>Signal</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ number_format($averagePercentage, 2) }}%</td>
-                                                        <td>
-                                                            <span id="signal-otdp-inbound" class="signal
-                                                                {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
-                                                                {{ $averagePercentage >= 95 ? 'G' : ($averagePercentage >= 85 ? 'Y' : 'R') }}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center">Average OTDC</th>
+                                                            <th class="text-center">Signal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-center py-3">{{ number_format($averagePercentage, 2) }}%</td>
+                                                            <td class="text-center py-3">
+                                                                <span class="signal {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
+                                                                    {{ $averagePercentage >= 95 ? 'G' : ($averagePercentage >= 85 ? 'Y' : 'R') }}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
                                                 </table>
                                             </div>
                                         </div>
+
                                         <p style="margin-top: -20px" class="text-center">{{ $cc }}</p>
                                         <div style="margin-top: -20px" class="chart-container">
                                             <!-- ✅ TAMBAHKAN HEIGHT EXPLICIT -->
@@ -334,36 +342,44 @@
                                         <div class="row">
                                             <div class="col-md-8">
                                                 <table class="indicator-table mb-4">
-                                                    <tr>
-                                                        <th>Signal Indicator</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>
-                                                            <span class="signal green px-2">G</span> ≥ 95%
-                                                            <span class="signal yellow">Y</span> ≥ 85%
-                                                            <span class="signal red">R</span> < 85%
-                                                        </td>
-                                                    </tr>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center">Signal Indicator</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-center py-3">
+                                                                <span class="signal green">G</span> ≥ 95%
+                                                                <span class="signal yellow mx-3">Y</span> ≥ 85%
+                                                                <span class="signal red mx-3">R</span> < 85%
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
                                                 </table>
                                             </div>
                                             <div class="col-md-4">
                                                 <table class="indicator-table mb-4">
-                                                    <tr>
-                                                        <th>Average OTDP</th>
-                                                        <th>Signal</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <td>{{ number_format($averagePercentage, 2) }}%</td>
-                                                        <td>
-                                                            <span id="signal-otdp-outbound" class="signal
-                                                                {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
-                                                                {{ $averagePercentage >= 95 ? 'G' : ($averagePercentage >= 85 ? 'Y' : 'R') }}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="text-center">Average OTDP</th>
+                                                            <th class="text-center">Signal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-center py-3">{{ number_format($averagePercentage, 2) }}%</td>
+                                                            <td class="text-center py-3">
+                                                                <span id="signal-otdp-outbound" class="signal {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
+                                                                    {{ $averagePercentage >= 95 ? 'G' : ($averagePercentage >= 85 ? 'Y' : 'R') }}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
                                                 </table>
                                             </div>
                                         </div>
+
                                         <p style="margin-top: -20px" class="text-center">{{ $cc }}</p>
                                         <div style="margin-top: -20px" class="chart-container">
                                             <div id="otdp-outbound-chart-{{ $cc }}" class="chart-custom" style="width: 100%; height: 300px;"></div>

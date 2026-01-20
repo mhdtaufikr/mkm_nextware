@@ -41,3 +41,47 @@
     visibility: visible;
   }
 
+  .indicator-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #dee2e6;
+}
+
+.indicator-table th {
+    background-color: #f8f9fa;
+    padding: 12px;
+    font-weight: 600;
+    border: 1px solid #dee2e6;
+    color: #6c757d;
+}
+
+.indicator-table td {
+    padding: 15px;
+    border: 1px solid #dee2e6;
+}
+
+.signal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.signal.green {
+    background-color: #28a745;
+}
+
+.signal.yellow {
+    background-color: #ffc107;
+}
+
+.signal.red {
+    background-color: #dc3545;
+}
+
+
