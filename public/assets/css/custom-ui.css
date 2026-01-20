@@ -53,23 +53,27 @@
     font-weight: 600;
     border: 1px solid #dee2e6;
     color: #6c757d;
+    font-size: 14px;
 }
 
 .indicator-table td {
-    padding: 15px;
+    padding: 15px 12px;
     border: 1px solid #dee2e6;
+    font-size: 14px;
 }
 
+/* Bulatan signal warna */
 .signal {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     color: white;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
+    margin: 0 5px;
 }
 
 .signal.green {
@@ -78,10 +82,10 @@
 
 .signal.yellow {
     background-color: #ffc107;
+    color: #333; /* Teks lebih gelap untuk kuning */
 }
 
 .signal.red {
     background-color: #dc3545;
 }
-
 

@@ -88,9 +88,9 @@
                                                     <tbody>
                                                         <tr>
                                                             <td class="text-center py-3">
-                                                                <span class="signal green">G</span> ≥ 95%
-                                                                <span class="signal yellow mx-3">Y</span> ≥ 85%
-                                                                <span class="signal red mx-3">R</span> < 85%
+                                                                <span class="signal green">G</span> <span class="mx-2">≥ 95%</span>
+                                                                <span class="signal yellow">Y</span> <span class="mx-2">≥ 85%</span>
+                                                                <span class="signal red">R</span> <span class="mx-2">< 85%</span>
                                                             </td>
                                                         </tr>
                                                     </tbody>
@@ -117,6 +117,7 @@
                                                 </table>
                                             </div>
                                         </div>
+
 
                                         <p style="margin-top: -20px" class="text-center">{{ $cc }}</p>
                                         <div style="margin-top: -20px" class="chart-container">
@@ -350,9 +351,9 @@
                                                     <tbody>
                                                         <tr>
                                                             <td class="text-center py-3">
-                                                                <span class="signal green">G</span> ≥ 95%
-                                                                <span class="signal yellow mx-3">Y</span> ≥ 85%
-                                                                <span class="signal red mx-3">R</span> < 85%
+                                                                <span class="signal green">G</span> <span class="mx-2">≥ 95%</span>
+                                                                <span class="signal yellow">Y</span> <span class="mx-2">≥ 85%</span>
+                                                                <span class="signal red">R</span> <span class="mx-2">< 85%</span>
                                                             </td>
                                                         </tr>
                                                     </tbody>
@@ -362,7 +363,7 @@
                                                 <table class="indicator-table mb-4">
                                                     <thead>
                                                         <tr>
-                                                            <th class="text-center">Average OTDP</th>
+                                                            <th class="text-center">Average OTDC</th>
                                                             <th class="text-center">Signal</th>
                                                         </tr>
                                                     </thead>
@@ -370,7 +371,7 @@
                                                         <tr>
                                                             <td class="text-center py-3">{{ number_format($averagePercentage, 2) }}%</td>
                                                             <td class="text-center py-3">
-                                                                <span id="signal-otdp-outbound" class="signal {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
+                                                                <span class="signal {{ $averagePercentage >= 95 ? 'green' : ($averagePercentage >= 85 ? 'yellow' : 'red') }}">
                                                                     {{ $averagePercentage >= 95 ? 'G' : ($averagePercentage >= 85 ? 'Y' : 'R') }}
                                                                 </span>
                                                             </td>
