@@ -224,33 +224,33 @@ class PlanningController extends Controller
 }
 
 
-    /**
-     * ✅ Import Planning from Excel
-     */
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+public function import(Request $request)
+{
+    $request->validate([
+        'month' => ['required', 'date_format:Y-m'], // ✅ Tambah validasi month
+        'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+    ]);
+
+    try {
+        // ✅ Pass month parameter ke constructor
+        $import = new PlanningImport($request->input('month'));
+        Excel::import($import, $request->file('file'));
+
+        $stats = $import->getStats();
+
+        return response()->json([
+            'ok' => true,
+            'inserted' => $stats['inserted'],
+            'updated' => $stats['updated'],
+            'skipped' => $stats['skipped'],
         ]);
 
-        try {
-            $import = new PlanningImport();
-            Excel::import($import, $request->file('file'));
-
-            $stats = $import->getStats();
-
-            return response()->json([
-                'ok' => true,
-                'inserted' => $stats['inserted'],
-                'updated' => $stats['updated'],
-                'skipped' => $stats['skipped'],
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'ok' => false,
-                'message' => 'Import failed: ' . $e->getMessage(),
-            ], 422);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'ok' => false,
+            'message' => 'Import failed: ' . $e->getMessage(),
+        ], 422);
     }
+}
+
 }

@@ -13,6 +13,7 @@
         "laravel/sanctum": "^2.11",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.5",
+        "livewire/livewire": "^2.12",
         "maatwebsite/excel": "^3.1",
         "socialiteproviders/microsoft": "^4.5",
         "socialiteproviders/microsoft-azure": "^5.2",

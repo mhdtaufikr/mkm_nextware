@@ -285,6 +285,14 @@
             </div>
             <form id="formImport" enctype="multipart/form-data">
                 <div class="modal-body">
+                    {{-- ✅ Month Input --}}
+                    <div class="mb-3">
+                        <label for="import_month" class="form-label">Month <span class="text-danger">*</span></label>
+                        <input type="month" id="import_month" name="month" class="form-control" required>
+                        <small class="text-muted">Pilih bulan untuk planning yang akan diimport</small>
+                    </div>
+
+                    {{-- File Input --}}
                     <div class="mb-3">
                         <label for="import_file" class="form-label">Excel File <span class="text-danger">*</span></label>
                         <input type="file" id="import_file" name="file" class="form-control" accept=".xlsx,.xls,.csv" required>
@@ -312,6 +320,21 @@
         </div>
     </div>
 </div>
+
+{{-- ✅ Script untuk set default month ke bulan sekarang --}}
+<script>
+    // Set default month to current month
+    document.addEventListener('DOMContentLoaded', function() {
+        const monthInput = document.getElementById('import_month');
+        if (monthInput) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            monthInput.value = `${year}-${month}`;
+        }
+    });
+</script>
+
 
 <script>
     (function () {
