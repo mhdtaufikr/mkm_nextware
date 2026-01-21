@@ -130,7 +130,7 @@
             // ✅ Y-axis kanan: max 100% untuk percentage
             var yAxisRight = chart.yAxes.push(am5xy.ValueAxis.new(root, {
                 min: 0,
-                max: 100, // ✅ Ubah dari 120 → 100
+                max: 120, // ✅ Ubah dari 120 → 100
                 strictMinMax: true,
                 renderer: am5xy.AxisRendererY.new(root, { opposite: true, strokeOpacity: 0.1 })
             }));
