@@ -97,7 +97,7 @@
 <script>
     am5.ready(function() {
         const inboundData = @json($otdpInbound);
-        const rootsInbound = {}; // Rename untuk avoid conflict
+        const rootsInbound = {};
 
         function createOTDPInboundChart(ccName, plannedData, actualData, percentageData, endDate) {
             const chartElement = document.getElementById(`otdp-inbound-chart-${ccName}`);
@@ -133,9 +133,10 @@
                 renderer: am5xy.AxisRendererY.new(root, { strokeOpacity: 0.1 })
             }));
 
+            // ✅ Y-axis kanan: max 100% untuk percentage
             var yAxisRight = chart.yAxes.push(am5xy.ValueAxis.new(root, {
                 min: 0,
-                max: 120,
+                max: 100, // ✅ Ubah dari 120 → 100
                 strictMinMax: true,
                 renderer: am5xy.AxisRendererY.new(root, { opposite: true, strokeOpacity: 0.1 })
             }));
@@ -154,6 +155,7 @@
                 centerX: am5.p50
             }), 0);
 
+            // Planned Series
             var planSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
                 name: "Planned Qty",
                 xAxis: xAxis,
@@ -180,6 +182,7 @@
                 plan: value || 0
             })));
 
+            // Actual Series
             var actualSeries = chart.series.push(am5xy.ColumnSeries.new(root, {
                 name: "Actual Qty",
                 xAxis: xAxis,
@@ -206,26 +209,39 @@
                 actual: value || 0
             })));
 
+            // ✅ Percentage Series dengan Cap 100%
             var percentageSeries = chart.series.push(am5xy.LineSeries.new(root, {
                 name: "OTDP %",
                 xAxis: xAxis,
                 yAxis: yAxisRight,
-                valueYField: "percentage",
+                valueYField: "percentage_display", // ✅ Gunakan field baru untuk display
                 categoryXField: "date",
-                tooltip: am5.Tooltip.new(root, { labelText: "{name}: {valueY}%" }),
+                tooltip: am5.Tooltip.new(root, {
+                    labelText: "{name}: {percentage_actual}%" // ✅ Tampilkan nilai asli di tooltip
+                }),
                 stroke: am5.color(0x000000),
                 fill: am5.color(0x000000)
             }));
 
             percentageSeries.strokes.template.setAll({ strokeWidth: 3 });
-            percentageSeries.data.setAll(percentageData.slice(0, endDate).map((value, i) => ({
-                date: (i + 1).toString(),
-                percentage: value || 0
-            })));
 
+            // ✅ Data dengan percentage di-cap di 100% untuk display
+            percentageSeries.data.setAll(percentageData.slice(0, endDate).map((value, i) => {
+                const actualValue = value || 0;
+                const displayValue = Math.min(actualValue, 100); // ✅ Cap di 100%
+
+                return {
+                    date: (i + 1).toString(),
+                    percentage_display: displayValue, // ✅ Untuk posisi dot (max 100)
+                    percentage_actual: actualValue.toFixed(2) // ✅ Untuk tooltip (nilai asli)
+                };
+            }));
+
+            // ✅ Bullets dengan warna berdasarkan nilai asli
             percentageSeries.bullets.push(function(root, series, dataItem) {
-                var value = dataItem.dataContext.percentage;
-                var bulletColor = value < 100 ? am5.color(0xff0000) : am5.color(0x00ff00);
+                var actualValue = parseFloat(dataItem.dataContext.percentage_actual);
+                var bulletColor = actualValue < 100 ? am5.color(0xff0000) : am5.color(0x00ff00);
+
                 return am5.Bullet.new(root, {
                     sprite: am5.Circle.new(root, {
                         strokeWidth: 3,
