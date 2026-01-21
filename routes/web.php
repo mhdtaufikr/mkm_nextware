@@ -41,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword'])->name('changePassword');
     //Home Controller
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-
+    Route::get('/home/detail', [HomeController::class, 'getDetail'])->name('home.detail');
 
     //Dropdown Controller
     Route::get('/dropdown', [DropdownController::class, 'index']);

@@ -42,6 +42,108 @@ class HomeController extends Controller
         ]);
     }
 
+    /**
+     * Get detail data for specific day and cutting center
+     */
+    public function getDetail(Request $request)
+    {
+        $locationCode = $request->get('location_code');
+        $externalId = $request->get('external_id');
+        $type = $request->get('type'); // inbound or outbound
+        $day = (int) $request->get('day');
+        $cuttingCenter = $request->get('cutting_center');
+
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+
+        // Build target date
+        $targetDate = Carbon::createFromDate($currentYear, $currentMonth, $day)->toDateString();
+
+        // Get planning data
+        $planningData = DB::table('plannings')
+            ->select(
+                'id',
+                'plan_date',
+                'cutting_center',
+                'qty',
+                'type',
+                'code',
+                DB::raw("'planning' as source")
+            )
+            ->where('location_code', $locationCode)
+            ->whereRaw('LOWER(type) = ?', [strtolower($type)])
+            ->where('cutting_center', $cuttingCenter)
+            ->whereDate('plan_date', $targetDate)
+            ->get();
+
+        // Get actual data (orders)
+        // ✅ PERBAIKAN: Extract SKU dan Product Name dari raw_payload JSON
+        $actualQuery = DB::table('order_details as od')
+            ->join('orders as o', 'o.id', '=', 'od.order_id')
+            ->select(
+                'od.id',
+                'o.id as order_id',
+                'o.ref_number',
+                'o.external_id as external_order_id',
+                'od.code',
+                'od.serial_number',
+                // ✅ Extract SKU dari raw_payload
+                DB::raw("COALESCE(
+                    JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.sku')),
+                    JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.sku')),
+                    od.code
+                ) as sku"),
+                // ✅ Extract Product Name dari raw_payload
+                DB::raw("COALESCE(
+                    JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.name')),
+                    JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product_name')),
+                    JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.name')),
+                    'N/A'
+                ) as product_name"),
+                DB::raw('COALESCE(od.qty_process, od.qty) as qty'),
+                DB::raw('COALESCE(o.external_created_at, o.created_at) as order_date'),
+                'od.status',
+                'od.rack',
+                'od.rack_source',
+                // ✅ Extract Cutting Center
+                DB::raw("
+                    CASE
+                        WHEN LOWER(o.type) = 'inbound' THEN
+                            COALESCE(
+                                JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.custom_field.cutting_center')),
+                                'UNKNOWN'
+                            )
+                        WHEN LOWER(o.type) = 'outbound' THEN
+                            COALESCE(od.rack, 'UNKNOWN')
+                        ELSE 'UNKNOWN'
+                    END as cutting_center
+                "),
+                DB::raw("'actual' as source")
+            )
+            ->whereRaw('LOWER(o.type) = ?', [strtolower($type)])
+            ->where('o.external_location_id', $externalId)
+            ->whereRaw('LOWER(od.status) = ?', ['done'])
+            ->whereDate(DB::raw('COALESCE(o.external_created_at, o.created_at)'), $targetDate)
+            ->get();
+
+        // Filter actual data by cutting center
+        $actualData = $actualQuery->filter(function($item) use ($cuttingCenter) {
+            return $item->cutting_center === $cuttingCenter;
+        })->values();
+
+        return response()->json([
+            'planning' => $planningData,
+            'actual' => $actualData,
+            'summary' => [
+                'total_plan_qty' => $planningData->sum('qty'),
+                'total_actual_qty' => $actualData->sum('qty'),
+                'date' => $targetDate,
+                'cutting_center' => $cuttingCenter,
+                'type' => $type
+            ]
+        ]);
+    }
+
     protected function buildOtdp($location, string $type)
     {
         $locationCode = $location->location_code;
@@ -50,9 +152,6 @@ class HomeController extends Controller
         $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
         $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
 
-        /**
-         * PLANNING (filtered by current month)
-         */
         $planning = DB::table('plannings')
             ->select(
                 'cutting_center',
@@ -65,9 +164,6 @@ class HomeController extends Controller
             ->whereBetween('plan_date', [$startOfMonth, $endOfMonth])
             ->groupBy('cutting_center', DB::raw('DAY(plan_date)'));
 
-        /**
-         * ✅ ACTUAL - Beda logic untuk inbound vs outbound
-         */
         $actualBase = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
             ->select(
@@ -108,14 +204,8 @@ class HomeController extends Controller
             )
             ->groupBy('x.cutting_center', 'x.day');
 
-        /**
-         * UNION planning + actual
-         */
         $union = $planning->unionAll($actual);
 
-        /**
-         * FINAL RESULT
-         */
         $result = DB::query()
             ->fromSub($union, 'u')
             ->select(
@@ -139,7 +229,4 @@ class HomeController extends Controller
 
         return $result;
     }
-
-
-
 }
