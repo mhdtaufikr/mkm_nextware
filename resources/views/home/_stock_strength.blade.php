@@ -1,5 +1,5 @@
 <!-- Stock Strength Dashboard -->
-<div class="col-md-12 mb-4"> <!-- ✅ mb-2 → mb-4 untuk spacing bawah lebih besar -->
+<div class="col-md-12 mb-2" style="margin-top: -28px">
     <div class="card card-custom">
         <div class="card-header py-2">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -10,7 +10,10 @@
                             <i data-feather="alert-triangle" class="me-1" style="width: 16px; height: 16px;"></i>
                             Stock Strength Analysis - Tomorrow ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }})
                         </h6>
-                        <small class="text-muted" style="font-size: 0.7rem;">Stock vs Planning Outbound Tomorrow. Click bar for detail.</small>
+                        <small class="text-muted" style="font-size: 0.7rem;">
+                            <strong>Formula:</strong> <code class="bg-white px-1" style="font-size: 0.7rem;">Difference = Current Stock - Planned Qty (OUT)</code>
+                            <span class="mx-1">|</span> Click bar for detail
+                        </small>
                     </div>
 
                     <!-- ✅ Location Selector (inline) -->
@@ -33,27 +36,26 @@
                 </div>
 
                 <!-- ✅ Right: Status Badges + Legend Inline -->
-                    <div class="d-flex gap-2 flex-wrap align-items-center">
-                        <!-- Status Count Badges -->
-                        <div class="d-flex gap-1">
-                            <span class="badge bg-danger text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">C: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
-                            <span class="badge bg-warning text-dark" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">E: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
-                            <span class="badge bg-info text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">L: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
-                            <span class="badge bg-success text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">S: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
-                        </div>
-
-                        <!-- Legend Separator -->
-                        <div class="vr" style="height: 24px;"></div>
-
-                        <!-- Compact Legend -->
-                        <div class="d-flex gap-2" style="font-size: 0.7rem;">
-                            <span><strong class="text-danger">🔴</strong> <span class="text-white">Critical</span></span>
-                            <span><strong class="text-warning">🟡</strong> <span class="text-white">Exact</span></span>
-                            <span><strong class="text-info">🔵</strong> <span class="text-white">Low</span></span>
-                            <span><strong class="text-success">🟢</strong> <span class="text-white">Safe</span></span>
-                        </div>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <!-- Status Count Badges -->
+                    <div class="d-flex gap-1">
+                        <span class="badge bg-danger text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">C: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
+                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">E: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
+                        <span class="badge bg-info text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">L: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
+                        <span class="badge bg-success text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">S: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
                     </div>
 
+                    <!-- Legend Separator -->
+                    <div class="vr" style="height: 24px;"></div>
+
+                    <!-- Compact Legend -->
+                    <div class="d-flex gap-2" style="font-size: 0.7rem;">
+                        <span><strong class="text-danger">🔴</strong> <span class="text-white">Critical</span></span>
+                        <span><strong class="text-warning">🟡</strong> <span class="text-white">Exact</span></span>
+                        <span><strong class="text-info">🔵</strong> <span class="text-white">Low</span></span>
+                        <span><strong class="text-success">🟢</strong> <span class="text-white">Safe</span></span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -66,13 +68,6 @@
             @else
                 <!-- ✅ Chart Container - Height naik dari 280px → 350px -->
                 <div id="stockStrengthChart" style="width: 100%; height: 350px;"></div>
-
-                <!-- ✅ Formula Info - Compact, di atas toggle -->
-                <div class="d-flex justify-content-between align-items-center mt-2 px-2 py-1 bg-light rounded" style="font-size: 0.75rem;">
-                    <div>
-                        <strong>Formula:</strong> <code class="bg-white px-1">Difference = Current Stock - Planned Qty (OUT)</code>
-                    </div>
-                </div>
 
                 <!-- ✅ Toggle Button untuk Show/Hide Table -->
                 <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
@@ -156,6 +151,7 @@
         </div>
     </div>
 </div>
+
 
 
 <!-- Chart Script with Click Event -->

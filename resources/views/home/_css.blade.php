@@ -57,7 +57,7 @@
 
     /* 4. Stock Strength Specific */
     #stockStrengthChart {
-        height: 240px !important; /* Dari 280px → 240px */
+        height: 320px !important; /* Dari 280px → 240px */
         margin-bottom: 0 !important;
     }
 
@@ -213,7 +213,7 @@
         }
 
         #stockStrengthChart {
-            height: 220px !important;
+            height: 320px !important;
         }
     }
 
