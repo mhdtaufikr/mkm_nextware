@@ -22,6 +22,7 @@ class HomeController extends Controller
                 'selected' => null,
                 'otdpInbound' => collect(),
                 'otdpOutbound' => collect(),
+                'stockStrength'   => $this->buildStockStrength($selected), // ✅ New
             ]);
         }
 
@@ -39,8 +40,109 @@ class HomeController extends Controller
             'selected'      => $selected,
             'otdpInbound'   => $this->buildOtdp($selected, 'inbound'),
             'otdpOutbound'  => $this->buildOtdp($selected, 'outbound'),
+            'stockStrength'   => $this->buildStockStrength($selected), // ✅ New
         ]);
     }
+
+   /**
+ * Build Stock Strength data for tomorrow's planning
+ * Only for OUTBOUND type
+ * Simple comparison: inventory.qty vs planning.qty
+ * Filter out planning with qty = 0
+ */
+protected function buildStockStrength($location)
+{
+    $locationCode = $location->location_code;
+    $tomorrow = Carbon::tomorrow()->toDateString();
+
+    // Get tomorrow's planning - ONLY OUTBOUND
+    $tomorrowPlanning = DB::table('plannings')
+        ->select(
+            'code',
+            'cutting_center',
+            'type',
+            DB::raw('SUM(qty) as planned_qty')
+        )
+        ->where('location_code', $locationCode)
+        ->whereRaw('LOWER(type) = ?', ['outbound'])
+        ->whereDate('plan_date', $tomorrow)
+        ->groupBy('code', 'cutting_center', 'type')
+        ->havingRaw('SUM(qty) > 0') // ✅ Filter: hanya yang planned_qty > 0
+        ->get();
+
+    // Get current inventory stock
+    $inventory = DB::table('inventories')
+        ->select(
+            'code',
+            'name',
+            'qty',
+            'stock_status',
+            'rack_type',
+            // Extract cutting center dari custom_field atau product_payload
+            DB::raw("COALESCE(
+                JSON_UNQUOTE(JSON_EXTRACT(custom_field, '$.cutting_center')),
+                JSON_UNQUOTE(JSON_EXTRACT(product_payload, '$.custom_field.cutting_center')),
+                'UNKNOWN'
+            ) as cutting_center")
+        )
+        ->where('location_code', $locationCode)
+        ->get()
+        ->keyBy('code');
+
+    // Merge planning with inventory
+    $stockData = $tomorrowPlanning->map(function($plan) use ($inventory) {
+        $stock = $inventory->get($plan->code);
+
+        // Simple: hanya pakai qty dari inventory
+        $currentStock = $stock ? (int)$stock->qty : 0;
+        $plannedQty = (int)$plan->planned_qty;
+
+        // Calculate difference
+        $difference = $currentStock - $plannedQty;
+
+        // Determine status
+        if ($difference < 0) {
+            $status = 'CRITICAL';
+            $statusColor = 'danger';
+        } elseif ($difference == 0) {
+            $status = 'EXACT';
+            $statusColor = 'warning';
+        } elseif ($difference > 0 && $difference <= ($plannedQty * 0.2)) {
+            $status = 'LOW';
+            $statusColor = 'info';
+        } else {
+            $status = 'SAFE';
+            $statusColor = 'success';
+        }
+
+        return (object)[
+            'code' => $plan->code,
+            'name' => $stock->name ?? 'N/A',
+            'cutting_center' => $plan->cutting_center,
+            'type' => $plan->type,
+            'planned_qty' => $plannedQty,
+            'current_stock' => $currentStock,
+            'difference' => $difference,
+            'status' => $status,
+            'status_color' => $statusColor,
+            'rack_type' => $stock->rack_type ?? '-',
+            'stock_status' => $stock->stock_status ?? 'unknown',
+        ];
+    });
+
+    // Sort by status priority: CRITICAL > EXACT > LOW > SAFE
+    $statusPriority = [
+        'CRITICAL' => 1,
+        'EXACT' => 2,
+        'LOW' => 3,
+        'SAFE' => 4,
+    ];
+
+    return $stockData->sortBy(function($item) use ($statusPriority) {
+        return $statusPriority[$item->status] ?? 999;
+    })->values();
+}
+
 
     /**
      * Get detail data for specific day and cutting center
