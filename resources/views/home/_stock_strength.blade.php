@@ -164,8 +164,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Status Card -->
-                <div class="card mb-3" id="detail-status-card">
+                <!-- Status Card dengan Border -->
+                <div class="card mb-3 border-3" id="detail-status-card" style="border-width: 3px !important;">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-8">
@@ -190,26 +190,26 @@
                 <!-- Stock Metrics -->
                 <div class="row mb-3">
                     <div class="col-md-4">
-                        <div class="card bg-primary bg-opacity-10">
+                        <div class="card border-primary" style="border-width: 2px;">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted d-block mb-1">Current Stock</small>
-                                <h4 class="mb-0 text-primary" id="detail-current-stock">0</h4>
+                                <h4 class="mb-0 text-primary fw-bold" id="detail-current-stock">0</h4>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card bg-danger bg-opacity-10">
+                        <div class="card border-danger" style="border-width: 2px;">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted d-block mb-1">Planned Qty (OUT)</small>
-                                <h4 class="mb-0 text-danger" id="detail-planned-qty">0</h4>
+                                <h4 class="mb-0 text-danger fw-bold" id="detail-planned-qty">0</h4>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card bg-light">
+                        <div class="card border-secondary" style="border-width: 2px;">
                             <div class="card-body text-center py-3">
                                 <small class="text-muted d-block mb-1">Difference</small>
-                                <h4 class="mb-0" id="detail-difference">0</h4>
+                                <h4 class="mb-0 fw-bold" id="detail-difference">0</h4>
                             </div>
                         </div>
                     </div>
@@ -219,7 +219,7 @@
                 <div class="mb-3">
                     <label class="form-label"><strong>Stock Availability</strong></label>
                     <div class="progress" style="height: 30px;">
-                        <div class="progress-bar" role="progressbar" id="stock-progress" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar fw-bold" role="progressbar" id="stock-progress" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                             <span id="stock-progress-text">0%</span>
                         </div>
                     </div>
@@ -412,47 +412,51 @@
         chart.appear(1000, 100);
     });
 
-    // ✅ Function to show stock detail in modal
-    function showStockDetail(data) {
-        $('#detail-code').text(data.code);
-        $('#detail-name').text(data.name);
-        $('#detail-cutting-center').text(data.cutting_center);
-        $('#detail-rack-type').text(data.rack_type || '-');
+// ✅ Function to show stock detail in modal
+function showStockDetail(data) {
+    $('#detail-code').text(data.code);
+    $('#detail-name').text(data.name);
+    $('#detail-cutting-center').text(data.cutting_center);
+    $('#detail-rack-type').text(data.rack_type || '-');
 
-        const statusBadge = $('#detail-status-badge');
-        statusBadge.removeClass().addClass('badge bg-' + data.status_color);
-        statusBadge.text(data.status);
+    const statusBadge = $('#detail-status-badge');
+    statusBadge.removeClass().addClass('badge bg-' + data.status_color);
+    statusBadge.text(data.status);
 
-        $('#detail-current-stock').text(data.current_stock.toLocaleString());
-        $('#detail-planned-qty').text(data.planned_qty.toLocaleString());
+    $('#detail-current-stock').text(data.current_stock.toLocaleString());
+    $('#detail-planned-qty').text(data.planned_qty.toLocaleString());
 
-        const diffElement = $('#detail-difference');
-        diffElement.text((data.difference >= 0 ? '+' : '') + data.difference.toLocaleString());
-        diffElement.removeClass().addClass('fs-4 fw-bold ' + (data.difference < 0 ? 'text-danger' : 'text-success'));
+    const diffElement = $('#detail-difference');
+    diffElement.text((data.difference >= 0 ? '+' : '') + data.difference.toLocaleString());
+    diffElement.removeClass().addClass('fw-bold ' + (data.difference < 0 ? 'text-danger' : 'text-success'));
 
-        const statusCard = $('#detail-status-card');
-        statusCard.removeClass().addClass('card bg-' + data.status_color + ' bg-opacity-25');
+    // ✅ Set border color instead of background
+    const statusCard = $('#detail-status-card');
+    statusCard.removeClass();
+    statusCard.addClass('card mb-3 border-' + data.status_color);
+    statusCard.css('border-width', '3px');
 
-        const percentage = data.planned_qty > 0 ? (data.current_stock / data.planned_qty * 100) : 100;
-        const progressBar = $('#stock-progress');
-        const progressText = $('#stock-progress-text');
+    const percentage = data.planned_qty > 0 ? (data.current_stock / data.planned_qty * 100) : 100;
+    const progressBar = $('#stock-progress');
+    const progressText = $('#stock-progress-text');
 
-        if (percentage >= 100) {
-            progressBar.removeClass().addClass('progress-bar bg-success');
-            progressText.text('Stock Sufficient (' + percentage.toFixed(1) + '%)');
-        } else if (percentage >= 80) {
-            progressBar.removeClass().addClass('progress-bar bg-warning');
-            progressText.text('Stock Low (' + percentage.toFixed(1) + '%)');
-        } else {
-            progressBar.removeClass().addClass('progress-bar bg-danger');
-            progressText.text('Stock Critical (' + percentage.toFixed(1) + '%)');
-        }
-
-        progressBar.css('width', Math.min(percentage, 100) + '%');
-
-        const modal = new bootstrap.Modal(document.getElementById('stockDetailModal'));
-        modal.show();
+    if (percentage >= 100) {
+        progressBar.removeClass().addClass('progress-bar bg-success fw-bold');
+        progressText.text('Stock Sufficient (' + percentage.toFixed(1) + '%)');
+    } else if (percentage >= 80) {
+        progressBar.removeClass().addClass('progress-bar bg-warning fw-bold');
+        progressText.text('Stock Low (' + percentage.toFixed(1) + '%)');
+    } else {
+        progressBar.removeClass().addClass('progress-bar bg-danger fw-bold');
+        progressText.text('Stock Critical (' + percentage.toFixed(1) + '%)');
     }
+
+    progressBar.css('width', Math.min(percentage, 100) + '%');
+
+    const modal = new bootstrap.Modal(document.getElementById('stockDetailModal'));
+    modal.show();
+}
+
 
     // ✅ Document Ready
     $(document).ready(function() {
