@@ -1,6 +1,7 @@
 @extends('layouts.master')
 
 @section('content')
+@include('home._css')
 <main>
     <header class="page-header page-header-dark bg-gradient-primary-to-secondary pb-10">
         <div class="container-fluid px-4">

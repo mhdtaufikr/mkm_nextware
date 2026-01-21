@@ -369,34 +369,3 @@
     });
 </script>
 
-<style>
-    .table-danger {
-        background-color: #f8d7da !important;
-    }
-    .table-warning {
-        background-color: #fff3cd !important;
-    }
-    .table-info {
-        background-color: #cff4fc !important;
-    }
-    .table-success {
-        background-color: #d1e7dd !important;
-    }
-
-    .bg-opacity-25 {
-        --bs-bg-opacity: 0.25;
-    }
-
-    .view-detail-btn {
-        padding: 0.25rem 0.5rem;
-    }
-
-    /* ✅ Smooth animation untuk collapse */
-    .collapse {
-        transition: height 0.35s ease;
-    }
-
-    .collapsing {
-        transition: height 0.35s ease;
-    }
-</style>
