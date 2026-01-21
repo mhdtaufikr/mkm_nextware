@@ -28,71 +28,82 @@
                 <!-- Chart Container -->
                 <div id="stockStrengthChart" style="width: 100%; height: 400px;"></div>
 
-                <!-- Data Table -->
-                <div class="table-responsive mt-4">
-                    <table class="table table-hover table-sm" id="stockStrengthTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Status</th>
-                                <th>Code</th>
-                                <th>Product Name</th>
-                                <th>Cutting Center</th>
-                                <th class="text-end">Current Stock (qty)</th>
-                                <th class="text-end">Planned Qty (OUT)</th>
-                                <th class="text-end">Difference</th>
-                                <th>Rack Type</th>
-                                <th>Stock Status</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($stockStrength as $item)
-                                <tr class="table-{{ $item->status_color }}" data-stock='@json($item)'>
-                                    <td>
-                                        <span class="badge bg-{{ $item->status_color }}">
-                                            {{ $item->status }}
-                                        </span>
-                                    </td>
-                                    <td><strong>{{ $item->code }}</strong></td>
-                                    <td>{{ $item->name }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ $item->cutting_center }}</span>
-                                    </td>
-                                    <td class="text-end"><strong>{{ number_format($item->current_stock) }}</strong></td>
-                                    <td class="text-end">{{ number_format($item->planned_qty) }}</td>
-                                    <td class="text-end">
-                                        <strong class="{{ $item->difference < 0 ? 'text-danger' : 'text-success' }}">
-                                            {{ $item->difference >= 0 ? '+' : '' }}{{ number_format($item->difference) }}
-                                        </strong>
-                                    </td>
-                                    <td>{{ $item->rack_type }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ $item->stock_status }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-outline-primary view-detail-btn"
-                                                data-code="{{ $item->code }}"
-                                                title="View Detail">
-                                            <i data-feather="eye" style="width: 14px; height: 14px;"></i>
-                                        </button>
-                                    </td>
+                <!-- ✅ Toggle Button untuk Show/Hide Table -->
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+                    <h6 class="mb-0">Detailed Data Table</h6>
+                    <button class="btn btn-outline-primary btn-sm" type="button" id="toggleTableBtn" data-bs-toggle="collapse" data-bs-target="#stockTableCollapse" aria-expanded="false" aria-controls="stockTableCollapse">
+                        <i data-feather="chevron-down" id="toggleIcon" style="width: 16px; height: 16px;"></i>
+                        <span id="toggleText">Show Table</span>
+                    </button>
+                </div>
+
+                <!-- ✅ Collapsible Table Container -->
+                <div class="collapse" id="stockTableCollapse">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="stockStrengthTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Code</th>
+                                    <th>Product Name</th>
+                                    <th>Cutting Center</th>
+                                    <th class="text-end">Current Stock (qty)</th>
+                                    <th class="text-end">Planned Qty (OUT)</th>
+                                    <th class="text-end">Difference</th>
+                                    <th>Rack Type</th>
+                                    <th>Stock Status</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot class="table-light">
-                            <tr>
-                                <th colspan="4" class="text-end">Total:</th>
-                                <th class="text-end">{{ number_format($stockStrength->sum('current_stock')) }}</th>
-                                <th class="text-end">{{ number_format($stockStrength->sum('planned_qty')) }}</th>
-                                <th class="text-end">
-                                    <strong class="{{ $stockStrength->sum('difference') < 0 ? 'text-danger' : 'text-success' }}">
-                                        {{ $stockStrength->sum('difference') >= 0 ? '+' : '' }}{{ number_format($stockStrength->sum('difference')) }}
-                                    </strong>
-                                </th>
-                                <th colspan="3"></th>
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($stockStrength as $item)
+                                    <tr class="table-{{ $item->status_color }}" data-stock='@json($item)'>
+                                        <td>
+                                            <span class="badge bg-{{ $item->status_color }}">
+                                                {{ $item->status }}
+                                            </span>
+                                        </td>
+                                        <td><strong>{{ $item->code }}</strong></td>
+                                        <td>{{ $item->name }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ $item->cutting_center }}</span>
+                                        </td>
+                                        <td class="text-end"><strong>{{ number_format($item->current_stock) }}</strong></td>
+                                        <td class="text-end">{{ number_format($item->planned_qty) }}</td>
+                                        <td class="text-end">
+                                            <strong class="{{ $item->difference < 0 ? 'text-danger' : 'text-success' }}">
+                                                {{ $item->difference >= 0 ? '+' : '' }}{{ number_format($item->difference) }}
+                                            </strong>
+                                        </td>
+                                        <td>{{ $item->rack_type }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ $item->stock_status }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-outline-primary view-detail-btn"
+                                                    data-code="{{ $item->code }}"
+                                                    title="View Detail">
+                                                <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4" class="text-end">Total:</th>
+                                    <th class="text-end">{{ number_format($stockStrength->sum('current_stock')) }}</th>
+                                    <th class="text-end">{{ number_format($stockStrength->sum('planned_qty')) }}</th>
+                                    <th class="text-end">
+                                        <strong class="{{ $stockStrength->sum('difference') < 0 ? 'text-danger' : 'text-success' }}">
+                                            {{ $stockStrength->sum('difference') >= 0 ? '+' : '' }}{{ number_format($stockStrength->sum('difference')) }}
+                                        </strong>
+                                    </th>
+                                    <th colspan="3"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Legend -->
@@ -120,7 +131,7 @@
     </div>
 </div>
 
-<!-- Modal for Stock Detail -->
+<!-- Modal for Stock Detail (keep existing modal) -->
 <div class="modal fade" id="stockDetailModal" tabindex="-1" aria-labelledby="stockDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -255,7 +266,6 @@
             cursorOverStyle: "pointer"
         });
 
-        // ✅ Add click event to Current Stock bars
         stockSeries.columns.template.events.on("click", function(ev) {
             const dataItem = ev.target.dataItem.dataContext;
             showStockDetail(dataItem);
@@ -280,7 +290,6 @@
             cursorOverStyle: "pointer"
         });
 
-        // ✅ Add click event to Planned Qty bars
         planSeries.columns.template.events.on("click", function(ev) {
             const dataItem = ev.target.dataItem.dataContext;
             showStockDetail(dataItem);
@@ -303,7 +312,6 @@
             strokeWidth: 2
         });
 
-        // Color bullets based on difference value
         differenceSeries.bullets.push(function(root, series, dataItem) {
             var value = dataItem.dataContext.difference;
             var color = value < 0 ? am5.color(0xff0000) : am5.color(0x00ff00);
@@ -318,7 +326,6 @@
                 })
             });
 
-            // ✅ Click event on bullets
             bullet.events.on("click", function(ev) {
                 showStockDetail(dataItem.dataContext);
             });
@@ -345,7 +352,6 @@
         planSeries.data.setAll(chartData);
         differenceSeries.data.setAll(chartData);
 
-        // Add legend
         var legend = chart.children.push(am5.Legend.new(root, {
             centerX: am5.p50,
             x: am5.p50
@@ -353,30 +359,25 @@
 
         legend.data.setAll(chart.series.values);
 
-        // Add cursor
         var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
             behavior: "zoomX"
         }));
         cursor.lineY.set("visible", false);
 
-        // Animate
         chart.appear(1000, 100);
     });
 
     // ✅ Function to show stock detail in modal
     function showStockDetail(data) {
-        // Fill modal with data
         $('#detail-code').text(data.code);
         $('#detail-name').text(data.name);
         $('#detail-cutting-center').text(data.cutting_center);
         $('#detail-rack-type').text(data.rack_type || '-');
 
-        // Status badge
         const statusBadge = $('#detail-status-badge');
         statusBadge.removeClass().addClass('badge bg-' + data.status_color);
         statusBadge.text(data.status);
 
-        // Stock numbers
         $('#detail-current-stock').text(data.current_stock.toLocaleString());
         $('#detail-planned-qty').text(data.planned_qty.toLocaleString());
 
@@ -384,11 +385,9 @@
         diffElement.text((data.difference >= 0 ? '+' : '') + data.difference.toLocaleString());
         diffElement.removeClass().addClass('fs-4 fw-bold ' + (data.difference < 0 ? 'text-danger' : 'text-success'));
 
-        // Status card background
         const statusCard = $('#detail-status-card');
         statusCard.removeClass().addClass('card bg-' + data.status_color + ' bg-opacity-25');
 
-        // Progress bar
         const percentage = data.planned_qty > 0 ? (data.current_stock / data.planned_qty * 100) : 100;
         const progressBar = $('#stock-progress');
         const progressText = $('#stock-progress-text');
@@ -406,20 +405,33 @@
 
         progressBar.css('width', Math.min(percentage, 100) + '%');
 
-        // Show modal
         const modal = new bootstrap.Modal(document.getElementById('stockDetailModal'));
         modal.show();
     }
 
-    // ✅ Click event for table action buttons
+    // ✅ Document Ready
     $(document).ready(function() {
-        $('.view-detail-btn').on('click', function() {
+        // ✅ Toggle button icon & text animation
+        $('#stockTableCollapse').on('show.bs.collapse', function () {
+            $('#toggleText').text('Hide Table');
+            $('#toggleIcon').attr('data-feather', 'chevron-up');
+            feather.replace();
+        });
+
+        $('#stockTableCollapse').on('hide.bs.collapse', function () {
+            $('#toggleText').text('Show Table');
+            $('#toggleIcon').attr('data-feather', 'chevron-down');
+            feather.replace();
+        });
+
+        // Click event for table action buttons
+        $(document).on('click', '.view-detail-btn', function() {
             const row = $(this).closest('tr');
             const stockData = row.data('stock');
             showStockDetail(stockData);
         });
 
-        // Reinitialize feather icons for dynamic buttons
+        // Initialize feather icons
         if (typeof feather !== 'undefined') {
             feather.replace();
         }
@@ -446,5 +458,14 @@
 
     .view-detail-btn {
         padding: 0.25rem 0.5rem;
+    }
+
+    /* ✅ Smooth animation untuk collapse */
+    .collapse {
+        transition: height 0.35s ease;
+    }
+
+    .collapsing {
+        transition: height 0.35s ease;
     }
 </style>
