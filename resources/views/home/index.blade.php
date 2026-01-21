@@ -49,10 +49,10 @@
         @else
 
         <div class="row">
-            <!-- ✅ Stock Strength Dashboard (Full Width) -->
+            <!-- ✅ Stock Strength Dashboard (Full Width) - Height dikurangi -->
             @include('home._stock_strength')
 
-            <!-- OTDP Inbound & Outbound (Side by Side) -->
+            <!-- OTDP Inbound & Outbound (Side by Side) - Height dikurangi -->
             @include('home._inbound')
             @include('home._outbound')
         </div>

@@ -1,54 +1,54 @@
 <!-- Stock Strength Dashboard -->
-<div class="col-md-12 mb-4">
+<div class="col-md-12 mb-2"> <!-- ✅ mb-4 → mb-2 -->
     <div class="card card-custom">
-        <div class="card-header">
+        <div class="card-header py-2"> <!-- ✅ Tambah py-2 untuk compact header -->
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h5 class="card-title mb-0">
-                        <i data-feather="alert-triangle" class="me-2"></i>
-                        Stock Strength Analysis - Outbound Planning Tomorrow ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }})
-                    </h5>
-                    <small class="text-muted">Simple comparison: Current Stock (qty) vs Planning Outbound Tomorrow. Click bar for detail.</small>
+                    <h6 class="card-title mb-0"> <!-- ✅ h5 → h6 -->
+                        <i data-feather="alert-triangle" class="me-2" style="width: 16px; height: 16px;"></i>
+                        Stock Strength Analysis - Tomorrow ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }})
+                    </h6>
+                    <small class="text-muted" style="font-size: 0.75rem;">Stock (qty) vs Planning Outbound Tomorrow. Click bar for detail.</small>
                 </div>
                 <div>
-                    <span class="badge bg-danger me-1">CRITICAL: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
-                    <span class="badge bg-warning me-1">EXACT: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
-                    <span class="badge bg-info me-1">LOW: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
-                    <span class="badge bg-success">SAFE: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
+                    <span class="badge bg-danger me-1" style="font-size: 0.7rem;">CRITICAL: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
+                    <span class="badge bg-warning me-1" style="font-size: 0.7rem;">EXACT: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
+                    <span class="badge bg-info me-1" style="font-size: 0.7rem;">LOW: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
+                    <span class="badge bg-success" style="font-size: 0.7rem;">SAFE: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
                 </div>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body py-2"> <!-- ✅ py-2 untuk compact body -->
             @if($stockStrength->isEmpty())
-                <div class="alert alert-info text-center">
+                <div class="alert alert-info text-center mb-0">
                     <i data-feather="info" class="me-2"></i>
                     No outbound planning data for tomorrow
                 </div>
             @else
-                <!-- Chart Container -->
-                <div id="stockStrengthChart" style="width: 100%; height: 400px;"></div>
+                <!-- ✅ Chart Container - Height dikurangi dari 400px → 280px -->
+                <div id="stockStrengthChart" style="width: 100%; height: 280px;"></div>
 
                 <!-- ✅ Toggle Button untuk Show/Hide Table -->
-                <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
-                    <h6 class="mb-0">Detailed Data Table</h6>
-                    <button class="btn btn-outline-primary btn-sm" type="button" id="toggleTableBtn" data-bs-toggle="collapse" data-bs-target="#stockTableCollapse" aria-expanded="false" aria-controls="stockTableCollapse">
-                        <i data-feather="chevron-down" id="toggleIcon" style="width: 16px; height: 16px;"></i>
+                <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
+                    <h6 class="mb-0" style="font-size: 0.9rem;">Detailed Data Table</h6>
+                    <button class="btn btn-outline-primary btn-sm" type="button" id="toggleTableBtn" data-bs-toggle="collapse" data-bs-target="#stockTableCollapse" aria-expanded="false" aria-controls="stockTableCollapse" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        <i data-feather="chevron-down" id="toggleIcon" style="width: 14px; height: 14px;"></i>
                         <span id="toggleText">Show Table</span>
                     </button>
                 </div>
 
-                <!-- ✅ Collapsible Table Container -->
+                <!-- Collapsible Table Container -->
                 <div class="collapse" id="stockTableCollapse">
                     <div class="table-responsive">
-                        <table class="table table-hover table-sm" id="stockStrengthTable">
+                        <table class="table table-hover table-sm" id="stockStrengthTable" style="font-size: 0.8rem;">
                             <thead class="table-light">
                                 <tr>
                                     <th>Status</th>
                                     <th>Code</th>
                                     <th>Product Name</th>
                                     <th>Cutting Center</th>
-                                    <th class="text-end">Current Stock (qty)</th>
-                                    <th class="text-end">Planned Qty (OUT)</th>
+                                    <th class="text-end">Current Stock</th>
+                                    <th class="text-end">Planned Qty</th>
                                     <th class="text-end">Difference</th>
                                     <th>Rack Type</th>
                                     <th>Stock Status</th>
@@ -59,14 +59,14 @@
                                 @foreach($stockStrength as $item)
                                     <tr class="table-{{ $item->status_color }}" data-stock='@json($item)'>
                                         <td>
-                                            <span class="badge bg-{{ $item->status_color }}">
+                                            <span class="badge bg-{{ $item->status_color }}" style="font-size: 0.7rem;">
                                                 {{ $item->status }}
                                             </span>
                                         </td>
                                         <td><strong>{{ $item->code }}</strong></td>
                                         <td>{{ $item->name }}</td>
                                         <td>
-                                            <span class="badge bg-secondary">{{ $item->cutting_center }}</span>
+                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ $item->cutting_center }}</span>
                                         </td>
                                         <td class="text-end"><strong>{{ number_format($item->current_stock) }}</strong></td>
                                         <td class="text-end">{{ number_format($item->planned_qty) }}</td>
@@ -77,13 +77,14 @@
                                         </td>
                                         <td>{{ $item->rack_type }}</td>
                                         <td>
-                                            <span class="badge bg-secondary">{{ $item->stock_status }}</span>
+                                            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ $item->stock_status }}</span>
                                         </td>
                                         <td class="text-center">
                                             <button class="btn btn-sm btn-outline-primary view-detail-btn"
                                                     data-code="{{ $item->code }}"
-                                                    title="View Detail">
-                                                <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                                    title="View Detail"
+                                                    style="padding: 0.15rem 0.4rem;">
+                                                <i data-feather="eye" style="width: 12px; height: 12px;"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -106,97 +107,27 @@
                     </div>
                 </div>
 
-                <!-- Legend -->
-                <div class="alert alert-light mt-3">
+                <!-- ✅ Legend - Compact -->
+                <div class="alert alert-light mt-2 mb-0 py-2" style="font-size: 0.75rem;">
                     <div class="row">
-                        <div class="col-md-12 mb-2">
+                        <div class="col-md-12 mb-1">
                             <strong>Formula:</strong> <code>Difference = Current Stock (qty) - Planned Qty (OUT)</code>
                         </div>
                         <div class="col-md-3">
-                            <strong class="text-danger">🔴 CRITICAL:</strong> Stock kurang (difference < 0)
+                            <strong class="text-danger">🔴 CRITICAL:</strong> Stock kurang
                         </div>
                         <div class="col-md-3">
-                            <strong class="text-warning">🟡 EXACT:</strong> Stock pas (difference = 0)
+                            <strong class="text-warning">🟡 EXACT:</strong> Stock pas
                         </div>
                         <div class="col-md-3">
-                            <strong class="text-info">🔵 LOW:</strong> Stock rendah (0 < diff ≤ 20%)
+                            <strong class="text-info">🔵 LOW:</strong> Stock rendah
                         </div>
                         <div class="col-md-3">
-                            <strong class="text-success">🟢 SAFE:</strong> Stock aman (diff > 20%)
+                            <strong class="text-success">🟢 SAFE:</strong> Stock aman
                         </div>
                     </div>
                 </div>
             @endif
-        </div>
-    </div>
-</div>
-
-<!-- Modal for Stock Detail (keep existing modal) -->
-<div class="modal fade" id="stockDetailModal" tabindex="-1" aria-labelledby="stockDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="stockDetailModalLabel">Stock Detail</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Summary Info -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-dark">Product Information</h6>
-                                <p class="mb-1"><strong>Code:</strong> <span id="detail-code"></span></p>
-                                <p class="mb-1"><strong>Name:</strong> <span id="detail-name"></span></p>
-                                <p class="mb-1"><strong>Cutting Center:</strong> <span id="detail-cutting-center" class="badge bg-secondary"></span></p>
-                                <p class="mb-0"><strong>Rack Type:</strong> <span id="detail-rack-type"></span></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card" id="detail-status-card">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-dark">Stock Status</h6>
-                                <p class="mb-1">
-                                    <strong>Status:</strong>
-                                    <span id="detail-status-badge" class="badge"></span>
-                                </p>
-                                <p class="mb-1">
-                                    <strong>Current Stock:</strong>
-                                    <span id="detail-current-stock" class="fs-4 fw-bold"></span>
-                                </p>
-                                <p class="mb-1">
-                                    <strong>Planned Qty:</strong>
-                                    <span id="detail-planned-qty" class="fs-4 fw-bold"></span>
-                                </p>
-                                <p class="mb-0">
-                                    <strong>Difference:</strong>
-                                    <span id="detail-difference" class="fs-4 fw-bold"></span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Visual Comparison -->
-                <div class="row">
-                    <div class="col-12">
-                        <h6 class="mb-3">Visual Comparison</h6>
-                        <div class="progress" style="height: 40px;">
-                            <div id="stock-progress" class="progress-bar" role="progressbar" style="width: 50%">
-                                <span id="stock-progress-text" class="fw-bold"></span>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-between mt-2">
-                            <small class="text-muted">Current Stock</small>
-                            <small class="text-muted">Planned Qty</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
         </div>
     </div>
 </div>

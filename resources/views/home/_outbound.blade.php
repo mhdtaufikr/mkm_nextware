@@ -1,10 +1,10 @@
    <!-- OTDP OUTBOUND -->
    <div class="col-md-6 mb-2">
     <div class="card card-custom">
-        <div class="card-header">
+        <div class="card-header py-2">
             <div class="card-title">OTDP Outbound</div>
         </div>
-        <div class="card-body">
+        <div class="card-body py-2">
             <div id="otdpOutboundCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div hidden class="carousel-indicators">
                     @foreach ($otdpOutbound as $cc => $rows)
@@ -28,7 +28,7 @@
                         <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                             <div class="row">
                                 <div class="col-md-8">
-                                    <table class="indicator-table mb-4">
+                                    <table class="indicator-table mb-2" style="font-size: 0.75rem;">
                                         <thead>
                                             <tr>
                                                 <th class="text-center">Signal Indicator</th>
@@ -67,8 +67,9 @@
                                 </div>
                             </div>
 
-                            <p style="margin-top: -20px" class="text-center"><strong>{{ $cc }}</strong></p>
-                            <div style="margin-top: -20px" class="chart-container">
+                            <p style="margin-top: -10px; font-size: 0.9rem;" class="text-center"><strong>{{ $cc }}</strong></p>
+                            <!-- ✅ Chart height dikurangi: 300px → 220px -->
+                            <div style="margin-top: -10px" class="chart-container">
                                 <div id="otdp-outbound-chart-{{ $cc }}" class="chart-custom" style="width: 100%; height: 300px;"></div>
                             </div>
                         </div>
