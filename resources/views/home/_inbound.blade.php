@@ -209,48 +209,51 @@
                 actual: value || 0
             })));
 
-            // ✅ Percentage Series dengan Cap 100%
-            var percentageSeries = chart.series.push(am5xy.LineSeries.new(root, {
-                name: "OTDP %",
-                xAxis: xAxis,
-                yAxis: yAxisRight,
-                valueYField: "percentage_display", // ✅ Gunakan field baru untuk display
-                categoryXField: "date",
-                tooltip: am5.Tooltip.new(root, {
-                    labelText: "{name}: {percentage_actual}%" // ✅ Tampilkan nilai asli di tooltip
-                }),
-                stroke: am5.color(0x000000),
-                fill: am5.color(0x000000)
-            }));
+        // ✅ Percentage Series dengan Tooltip di-cap 100%
+        var percentageSeries = chart.series.push(am5xy.LineSeries.new(root, {
+            name: "OTDP %",
+            xAxis: xAxis,
+            yAxis: yAxisRight,
+            valueYField: "percentage_display",
+            categoryXField: "date",
+            tooltip: am5.Tooltip.new(root, {
+                labelText: "{name}: {percentage_capped}%" // ✅ Tampilkan nilai yang sudah di-cap
+            }),
+            stroke: am5.color(0x000000),
+            fill: am5.color(0x000000)
+        }));
 
-            percentageSeries.strokes.template.setAll({ strokeWidth: 3 });
+        percentageSeries.strokes.template.setAll({ strokeWidth: 3 });
 
-            // ✅ Data dengan percentage di-cap di 100% untuk display
-            percentageSeries.data.setAll(percentageData.slice(0, endDate).map((value, i) => {
-                const actualValue = value || 0;
-                const displayValue = Math.min(actualValue, 100); // ✅ Cap di 100%
+        // ✅ Data dengan percentage di-cap untuk display DAN tooltip
+        percentageSeries.data.setAll(percentageData.slice(0, endDate).map((value, i) => {
+            const actualValue = value || 0;
+            const displayValue = Math.min(actualValue, 100); // ✅ Cap di 100%
+            const cappedValue = Math.min(actualValue, 100).toFixed(2); // ✅ Cap untuk tooltip juga
 
-                return {
-                    date: (i + 1).toString(),
-                    percentage_display: displayValue, // ✅ Untuk posisi dot (max 100)
-                    percentage_actual: actualValue.toFixed(2) // ✅ Untuk tooltip (nilai asli)
-                };
-            }));
+            return {
+                date: (i + 1).toString(),
+                percentage_display: displayValue,      // Untuk posisi dot (max 100)
+                percentage_capped: cappedValue,        // ✅ Untuk tooltip (max 100)
+                percentage_actual_raw: actualValue     // Raw value untuk logic (optional)
+            };
+        }));
 
-            // ✅ Bullets dengan warna berdasarkan nilai asli
-            percentageSeries.bullets.push(function(root, series, dataItem) {
-                var actualValue = parseFloat(dataItem.dataContext.percentage_actual);
-                var bulletColor = actualValue < 100 ? am5.color(0xff0000) : am5.color(0x00ff00);
+        // ✅ Bullets dengan warna berdasarkan nilai asli
+        percentageSeries.bullets.push(function(root, series, dataItem) {
+            var actualValue = dataItem.dataContext.percentage_actual_raw || parseFloat(dataItem.dataContext.percentage_display);
+            var bulletColor = actualValue < 100 ? am5.color(0xff0000) : am5.color(0x00ff00);
 
-                return am5.Bullet.new(root, {
-                    sprite: am5.Circle.new(root, {
-                        strokeWidth: 3,
-                        stroke: series.get("stroke"),
-                        radius: 5,
-                        fill: bulletColor
-                    })
-                });
+            return am5.Bullet.new(root, {
+                sprite: am5.Circle.new(root, {
+                    strokeWidth: 3,
+                    stroke: series.get("stroke"),
+                    radius: 5,
+                    fill: bulletColor
+                })
             });
+        });
+
 
             var legend = chart.children.push(am5.Legend.new(root, {
                 centerX: am5.p50,
