@@ -13,18 +13,23 @@
                 </div>
                 <div class="carousel-inner">
                     @foreach ($otdpOutbound as $cc => $rows)
-                        @php
-                            $totalPercentage = 0;
-                            $count = 0;
-                            $today = now()->day;
-                            foreach ($rows as $entry) {
-                                if ($entry->day <= $today && $entry->percentage !== null) {
-                                    $totalPercentage += $entry->percentage;
-                                    $count++;
-                                }
+                    @php
+                        $totalPercentage = 0;
+                        $count = 0;
+                        $today = now()->day;
+                        
+                        foreach ($rows as $entry) {
+                            if ($entry->day <= $today && $entry->percentage !== null) {
+                                // ✅ Kalau > 100%, ambil 100 aja
+                                $percentage = min($entry->percentage, 100);
+                                $totalPercentage += $percentage;
+                                $count++;
                             }
-                            $averagePercentage = ($count > 0) ? $totalPercentage / $count : 0;
-                        @endphp
+                        }
+                        
+                        $averagePercentage = ($count > 0) ? $totalPercentage / $count : 0;
+                    @endphp
+                
                         <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                             <div class="row">
                                 <div class="col-md-8">
