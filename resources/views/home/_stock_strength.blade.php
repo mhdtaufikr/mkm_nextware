@@ -208,7 +208,7 @@
             valueYField: "current_stock",
             categoryXField: "code",
             tooltip: am5.Tooltip.new(root, {
-                labelText: "{name}: {valueY}\n{name}"
+                labelText: "{name}: {valueY}\n{categoryX}"
             })
         }));
 
@@ -219,9 +219,12 @@
             cursorOverStyle: "pointer"
         });
 
+        // ✅ FIX: Proper click event binding
         stockSeries.columns.template.events.on("click", function(ev) {
-            const dataItem = ev.target.dataItem.dataContext;
-            showStockDetail(dataItem);
+            const dataItem = ev.target.dataItem;
+            if (dataItem && dataItem.dataContext) {
+                showStockDetail(dataItem.dataContext);
+            }
         });
 
         // ✅ Series 2: Planned Qty with Click Event
@@ -243,9 +246,12 @@
             cursorOverStyle: "pointer"
         });
 
+        // ✅ FIX: Proper click event binding
         planSeries.columns.template.events.on("click", function(ev) {
-            const dataItem = ev.target.dataItem.dataContext;
-            showStockDetail(dataItem);
+            const dataItem = ev.target.dataItem;
+            if (dataItem && dataItem.dataContext) {
+                showStockDetail(dataItem.dataContext);
+            }
         });
 
         // ✅ Series 3: Difference Line
@@ -269,21 +275,22 @@
             var value = dataItem.dataContext.difference;
             var color = value < 0 ? am5.color(0xff0000) : am5.color(0x00ff00);
 
-            var bullet = am5.Bullet.new(root, {
-                sprite: am5.Circle.new(root, {
-                    radius: 6,
-                    fill: color,
-                    stroke: am5.color(0xffffff),
-                    strokeWidth: 2,
-                    cursorOverStyle: "pointer"
-                })
+            var circle = am5.Circle.new(root, {
+                radius: 6,
+                fill: color,
+                stroke: am5.color(0xffffff),
+                strokeWidth: 2,
+                cursorOverStyle: "pointer"
             });
 
-            bullet.events.on("click", function(ev) {
+            // ✅ FIX: Bind click directly to circle
+            circle.events.on("click", function(ev) {
                 showStockDetail(dataItem.dataContext);
             });
 
-            return bullet;
+            return am5.Bullet.new(root, {
+                sprite: circle
+            });
         });
 
         // Set data
@@ -390,4 +397,5 @@
         }
     });
 </script>
+
 
