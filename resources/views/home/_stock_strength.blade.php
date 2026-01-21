@@ -15,7 +15,7 @@
 
                     <!-- ✅ Location Selector (inline) -->
                     <div class="d-flex align-items-center gap-2 border-start ps-3">
-                        <i data-feather="map-pin" style="width: 14px; height: 14px;" class="text-primary"></i>
+                        <i data-feather="map-pin" style="width: 14px; height: 14px;" class="text-white"></i>
                         <form method="GET" action="{{ route('home') }}" class="d-flex gap-1 align-items-center">
                             <select name="location_id"
                                     class="form-select form-select-sm"
@@ -33,26 +33,27 @@
                 </div>
 
                 <!-- ✅ Right: Status Badges + Legend Inline -->
-                <div class="d-flex gap-2 flex-wrap align-items-center">
-                    <!-- Status Count Badges -->
-                    <div class="d-flex gap-1">
-                        <span class="badge bg-danger" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">C: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
-                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">E: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
-                        <span class="badge bg-info" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">L: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
-                        <span class="badge bg-success" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">S: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
+                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                        <!-- Status Count Badges -->
+                        <div class="d-flex gap-1">
+                            <span class="badge bg-danger text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">C: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
+                            <span class="badge bg-warning text-dark" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">E: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
+                            <span class="badge bg-info text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">L: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
+                            <span class="badge bg-success text-white" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">S: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
+                        </div>
+
+                        <!-- Legend Separator -->
+                        <div class="vr" style="height: 24px;"></div>
+
+                        <!-- Compact Legend -->
+                        <div class="d-flex gap-2" style="font-size: 0.7rem;">
+                            <span><strong class="text-danger">🔴</strong> <span class="text-white">Critical</span></span>
+                            <span><strong class="text-warning">🟡</strong> <span class="text-white">Exact</span></span>
+                            <span><strong class="text-info">🔵</strong> <span class="text-white">Low</span></span>
+                            <span><strong class="text-success">🟢</strong> <span class="text-white">Safe</span></span>
+                        </div>
                     </div>
 
-                    <!-- Legend Separator -->
-                    <div class="vr" style="height: 24px;"></div>
-
-                    <!-- Compact Legend -->
-                    <div class="d-flex gap-2" style="font-size: 0.7rem;">
-                        <span><strong class="text-danger">🔴</strong> Critical</span>
-                        <span><strong class="text-warning">🟡</strong> Exact</span>
-                        <span><strong class="text-info">🔵</strong> Low</span>
-                        <span><strong class="text-success">🟢</strong> Safe</span>
-                    </div>
-                </div>
             </div>
         </div>
 
