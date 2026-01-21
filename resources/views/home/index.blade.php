@@ -16,23 +16,6 @@
                             OTDP Inbound & Outbound per Cutting Center
                         </div>
                     </div>
-
-                    <div class="col-auto mt-4">
-                        <form method="GET" action="{{ route('home') }}"
-                              class="d-flex gap-2 align-items-center">
-                            <label class="text-white-50 small mb-0">Location</label>
-                            <select name="location_id"
-                                    class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
-                                @foreach($locations as $loc)
-                                    <option value="{{ $loc->id }}" {{ $selected && $selected->id == $loc->id ? 'selected' : '' }}>
-                                        {{ $loc->display_name ?? $loc->location_code }}
-                                        @if((int)($loc->is_default ?? 0) === 1) (default) @endif
-                                    </option>
-                                @endforeach
-                            </select>
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>

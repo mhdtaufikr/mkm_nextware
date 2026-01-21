@@ -1,23 +1,47 @@
 <!-- Stock Strength Dashboard -->
-<div class="col-md-12 mb-2"> <!-- ✅ mb-4 → mb-2 -->
+<div class="col-md-12 mb-2" style="margin-top: -25px"> <!-- ✅ mb-4 → mb-2 -->
     <div class="card card-custom">
-        <div class="card-header py-2"> <!-- ✅ Tambah py-2 untuk compact header -->
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="card-title mb-0"> <!-- ✅ h5 → h6 -->
-                        <i data-feather="alert-triangle" class="me-2" style="width: 16px; height: 16px;"></i>
-                        Stock Strength Analysis - Tomorrow ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }})
-                    </h6>
-                    <small class="text-muted" style="font-size: 0.75rem;">Stock (qty) vs Planning Outbound Tomorrow. Click bar for detail.</small>
+        <div class="card-header py-2">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <!-- ✅ Left: Title & Subtitle -->
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <h6 class="card-title mb-0" style="font-size: 0.9rem;">
+                            <i data-feather="alert-triangle" class="me-1" style="width: 16px; height: 16px;"></i>
+                            Stock Strength Analysis - Tomorrow ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }})
+                        </h6>
+                        <small class="text-muted" style="font-size: 0.7rem;">Stock vs Planning Outbound Tomorrow. Click bar for detail.</small>
+                    </div>
+
+                    <!-- ✅ Location Selector (inline) -->
+                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                        <i data-feather="map-pin" style="width: 14px; height: 14px;" class="text-primary"></i>
+                        <form method="GET" action="{{ route('home') }}" class="d-flex gap-1 align-items-center">
+                            <select name="location_id"
+                                    class="form-select form-select-sm"
+                                    style="width: auto; min-width: 150px; font-size: 0.75rem; padding: 0.2rem 0.4rem;"
+                                    onchange="this.form.submit()">
+                                @foreach($locations as $loc)
+                                    <option value="{{ $loc->id }}" {{ $selected && $selected->id == $loc->id ? 'selected' : '' }}>
+                                        {{ $loc->display_name ?? $loc->location_code }}
+                                        @if((int)($loc->is_default ?? 0) === 1) ⭐ @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </div>
                 </div>
-                <div>
-                    <span class="badge bg-danger me-1" style="font-size: 0.7rem;">CRITICAL: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
-                    <span class="badge bg-warning me-1" style="font-size: 0.7rem;">EXACT: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
-                    <span class="badge bg-info me-1" style="font-size: 0.7rem;">LOW: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
-                    <span class="badge bg-success" style="font-size: 0.7rem;">SAFE: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
+
+                <!-- ✅ Right: Status Badges -->
+                <div class="d-flex gap-1 flex-wrap">
+                    <span class="badge bg-danger" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">C: {{ $stockStrength->where('status', 'CRITICAL')->count() }}</span>
+                    <span class="badge bg-warning text-dark" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">E: {{ $stockStrength->where('status', 'EXACT')->count() }}</span>
+                    <span class="badge bg-info" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">L: {{ $stockStrength->where('status', 'LOW')->count() }}</span>
+                    <span class="badge bg-success" style="font-size: 0.65rem; padding: 0.25rem 0.4rem;">S: {{ $stockStrength->where('status', 'SAFE')->count() }}</span>
                 </div>
             </div>
         </div>
+
         <div class="card-body py-2"> <!-- ✅ py-2 untuk compact body -->
             @if($stockStrength->isEmpty())
                 <div class="alert alert-info text-center mb-0">
