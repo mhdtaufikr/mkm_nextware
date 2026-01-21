@@ -152,6 +152,91 @@
     </div>
 </div>
 
+<!-- Stock Detail Modal -->
+<div class="modal fade" id="stockDetailModal" tabindex="-1" aria-labelledby="stockDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockDetailModalLabel">
+                    <i data-feather="package" class="me-2"></i>
+                    Stock Strength Detail
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Card -->
+                <div class="card mb-3" id="detail-status-card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="mb-1">
+                                    <strong id="detail-code"></strong> - <span id="detail-name"></span>
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    <i data-feather="scissors" style="width: 14px; height: 14px;"></i>
+                                    Cutting Center: <strong id="detail-cutting-center"></strong>
+                                    <span class="mx-2">|</span>
+                                    <i data-feather="layers" style="width: 14px; height: 14px;"></i>
+                                    Rack Type: <strong id="detail-rack-type"></strong>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge" id="detail-status-badge" style="font-size: 1rem; padding: 0.5rem 1rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Metrics -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card bg-primary bg-opacity-10">
+                            <div class="card-body text-center py-3">
+                                <small class="text-muted d-block mb-1">Current Stock</small>
+                                <h4 class="mb-0 text-primary" id="detail-current-stock">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger bg-opacity-10">
+                            <div class="card-body text-center py-3">
+                                <small class="text-muted d-block mb-1">Planned Qty (OUT)</small>
+                                <h4 class="mb-0 text-danger" id="detail-planned-qty">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center py-3">
+                                <small class="text-muted d-block mb-1">Difference</small>
+                                <h4 class="mb-0" id="detail-difference">0</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Progress Bar -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Stock Availability</strong></label>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar" role="progressbar" id="stock-progress" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="stock-progress-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Alert -->
+                <div class="alert alert-info mb-0">
+                    <i data-feather="info" class="me-2" style="width: 16px; height: 16px;"></i>
+                    <strong>Note:</strong> This analysis is based on tomorrow's outbound planning data ({{ \Carbon\Carbon::tomorrow()->format('d M Y') }}).
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <!-- Chart Script with Click Event -->
