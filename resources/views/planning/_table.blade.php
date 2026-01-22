@@ -2,8 +2,8 @@
     <table class="table table-sm table-bordered table-planning mb-0">
         <thead>
             <tr>
-                <th rowspan="2" class="freeze-col freeze-col-1" style="vertical-align: middle;">Cutting Center</th>
-                <th rowspan="2" class="freeze-col freeze-col-2" style="vertical-align: middle;">Code</th>
+                <th rowspan="2" style="vertical-align: middle;">Cutting Center</th>
+                <th rowspan="2" style="vertical-align: middle;">Code</th>
                 @foreach($dates as $d)
                     <th class="{{ in_array($d['weekday'], ['Sat', 'Sun']) ? 'weekend-col' : '' }}">
                         {{ $d['label'] }}<br>
@@ -17,9 +17,9 @@
                 @foreach($codes as $codeObj)
                     <tr>
                         @if($loop->first)
-                            <th rowspan="{{ $codes->count() }}" class="freeze-col freeze-col-1">{{ $cc }}</th>
+                            <th rowspan="{{ $codes->count() }}">{{ $cc }}</th>
                         @endif
-                        <td class="freeze-col freeze-col-2">{{ $codeObj->code }}</td>
+                        <td>{{ $codeObj->code }}</td>
                         @foreach($dates as $d)
                             @php
                                 $val = $qtyMap[$cc][$codeObj->code][$d['date']] ?? 0;
@@ -42,26 +42,3 @@
         </tbody>
     </table>
 </div>
-<style>
-    .freeze-col {
-    position: sticky;
-    background-color: #fff;
-    z-index: 10;
-}
-
-.freeze-col-1 {
-    left: 0;
-    border-right: 2px solid #dee2e6 !important;
-}
-
-.freeze-col-2 {
-    left: 150px; /* Sesuaikan dengan lebar kolom Cutting Center */
-    border-right: 2px solid #dee2e6 !important;
-}
-
-thead .freeze-col {
-    z-index: 11;
-    background-color: #f8f9fa;
-}
-
-</style>
