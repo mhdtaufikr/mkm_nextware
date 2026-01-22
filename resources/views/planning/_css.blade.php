@@ -13,15 +13,6 @@
         margin-bottom: 0;
     }
 
-    .table-planning thead th {
-        position: sticky;
-        top: 0;
-        background-color: #5a9fd4;
-        color: white;
-        z-index: 10;
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
-    }
-
     /* ✅ Freeze First Column (Cutting Center) */
     .table-planning tbody th {
         position: sticky;
@@ -42,14 +33,6 @@
     font-weight: 500;
 }
 
-    /* ✅ Freeze header Code column */
-    .table-planning .freeze-code-header {
-        position: sticky;
-        left: 105px; /* ← Sama dengan freeze-code-col */
-        z-index: 11;
-        background-color: #5a9fd4;
-        box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
-    }
 
     /* ✅ Input Styling */
     .qty-input {
