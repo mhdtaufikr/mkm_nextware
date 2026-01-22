@@ -176,10 +176,10 @@ protected function buildStockStrength($location)
             ->whereRaw('LOWER(type) = ?', [strtolower($type)])
             ->where('cutting_center', $cuttingCenter)
             ->whereDate('plan_date', $targetDate)
+            ->where('qty', '>', 0)  // 👈 FILTER: hanya qty > 0
             ->get();
 
         // Get actual data (orders)
-        // ✅ PERBAIKAN: Extract SKU dan Product Name dari raw_payload JSON
         $actualQuery = DB::table('order_details as od')
             ->join('orders as o', 'o.id', '=', 'od.order_id')
             ->select(
@@ -189,13 +189,13 @@ protected function buildStockStrength($location)
                 'o.external_id as external_order_id',
                 'od.code',
                 'od.serial_number',
-                // ✅ Extract SKU dari raw_payload
+                // Extract SKU dari raw_payload
                 DB::raw("COALESCE(
                     JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.sku')),
                     JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.sku')),
                     od.code
                 ) as sku"),
-                // ✅ Extract Product Name dari raw_payload
+                // Extract Product Name dari raw_payload
                 DB::raw("COALESCE(
                     JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product.name')),
                     JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, '$.product_name')),
@@ -207,7 +207,7 @@ protected function buildStockStrength($location)
                 'od.status',
                 'od.rack',
                 'od.rack_source',
-                // ✅ Extract Cutting Center
+                // Extract Cutting Center
                 DB::raw("
                     CASE
                         WHEN LOWER(o.type) = 'inbound' THEN
@@ -245,6 +245,7 @@ protected function buildStockStrength($location)
             ]
         ]);
     }
+
 
     protected function buildOtdp($location, string $type)
     {
