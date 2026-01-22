@@ -32,8 +32,8 @@
         font-weight: 600;
     }
 
-    /* ✅ Freeze Second Column (Code) - SEMUA row */
-    .table-planning tbody td:first-of-type {
+    /* ✅ Freeze Second Column (Code) - SEMUA row pakai class */
+    .table-planning .freeze-code-col {
         position: sticky;
         left: 150px; /* Sesuaikan dengan lebar kolom Cutting Center */
         background-color: #ffffff;
@@ -43,22 +43,12 @@
     }
 
     /* ✅ Freeze header Code column */
-    .table-planning thead th:nth-child(2) {
+    .table-planning .freeze-code-header {
         position: sticky;
         left: 150px; /* Sama dengan left di tbody */
         z-index: 11;
         background-color: #5a9fd4;
         box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    /* ✅ Freeze Second Column (Code) */
-    .table-planning tbody td:first-child {
-        position: sticky;
-        left: 0;
-        background-color: #ffffff;
-        z-index: 4;
-        box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
-        font-weight: 500;
     }
 
     /* ✅ Input Styling */
@@ -160,5 +150,10 @@
 
     .table-planning tbody tr:nth-child(even) .weekend-col {
         background-color: #c8cbce !important;
+    }
+
+    /* ✅ Row striping untuk frozen Code column */
+    .table-planning tbody tr:nth-child(even) .freeze-code-col {
+        background-color: #fafbfc;
     }
 </style>

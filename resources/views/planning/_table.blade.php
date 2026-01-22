@@ -3,7 +3,7 @@
         <thead>
             <tr>
                 <th rowspan="2" style="vertical-align: middle;">Cutting Center</th>
-                <th rowspan="2" style="vertical-align: middle;">Code</th>
+                <th rowspan="2" class="freeze-code-header" style="vertical-align: middle;">Code</th>
                 @foreach($dates as $d)
                     <th class="{{ in_array($d['weekday'], ['Sat', 'Sun']) ? 'weekend-col' : '' }}">
                         {{ $d['label'] }}<br>
@@ -19,7 +19,7 @@
                         @if($loop->first)
                             <th rowspan="{{ $codes->count() }}">{{ $cc }}</th>
                         @endif
-                        <td>{{ $codeObj->code }}</td>
+                        <td class="freeze-code-col">{{ $codeObj->code }}</td>
                         @foreach($dates as $d)
                             @php
                                 $val = $qtyMap[$cc][$codeObj->code][$d['date']] ?? 0;
