@@ -42,3 +42,26 @@
         </tbody>
     </table>
 </div>
+<style>
+    .freeze-col {
+    position: sticky;
+    background-color: #fff;
+    z-index: 10;
+}
+
+.freeze-col-1 {
+    left: 0;
+    border-right: 2px solid #dee2e6 !important;
+}
+
+.freeze-col-2 {
+    left: 150px; /* Sesuaikan dengan lebar kolom Cutting Center */
+    border-right: 2px solid #dee2e6 !important;
+}
+
+thead .freeze-col {
+    z-index: 11;
+    background-color: #f8f9fa;
+}
+
+</style>
