@@ -33,14 +33,14 @@
     }
 
    /* ✅ Freeze Second Column (Code) - SEMUA row pakai class */
-    .table-planning .freeze-code-col {
-        position: sticky;
-        left: 105px; /* ← Kurangi dari 150px jadi 90px atau lebih kecil */
-        background-color: #ffffff;
-        z-index: 4;
-        box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
-        font-weight: 500;
-    }
+   .table-planning .freeze-code-col {
+    position: sticky;
+    left: 100px; /* Sesuaikan dengan lebar kolom Cutting Center */
+    background-color: #ffffff;
+    z-index: 4;
+    box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
+    font-weight: 500;
+}
 
     /* ✅ Freeze header Code column */
     .table-planning .freeze-code-header {

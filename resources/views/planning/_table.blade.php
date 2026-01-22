@@ -3,7 +3,7 @@
         <thead>
             <tr>
                 <th rowspan="2" style="vertical-align: middle;">Cutting Center</th>
-                <th rowspan="2" class="freeze-code-header" style="vertical-align: middle;">Code</th>
+                <th rowspan="2" style="vertical-align: middle;">Code</th>
                 @foreach($dates as $d)
                     <th class="{{ in_array($d['weekday'], ['Sat', 'Sun']) ? 'weekend-col' : '' }}">
                         {{ $d['label'] }}<br>
