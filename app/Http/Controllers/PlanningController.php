@@ -41,133 +41,182 @@ class PlanningController extends Controller
         ]);
     }
 
-    /**
-     * Render planning table (grouped by cutting_center -> code)
-     */
-    public function table(Request $request)
-    {
-        $request->validate([
-            'location_code' => ['required', 'string'],
-            'month' => ['required', 'date_format:Y-m'],
-            'type' => ['required', 'in:inbound,outbound'],
-        ]);
+   /**
+ * Render planning table (grouped by cutting_center -> code)
+ */
+public function table(Request $request)
+{
+    $request->validate([
+        'location_code' => ['required', 'string'],
+        'month' => ['required', 'date_format:Y-m'],
+        'type' => ['required', 'in:inbound,outbound'],
+    ]);
 
-        $locationCode = $request->query('location_code');
-        $month = $request->query('month');
-        $type = $request->query('type');
+    $locationCode = $request->query('location_code');
+    $month = $request->query('month');
+    $type = $request->query('type');
 
-        $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
-        $end   = (clone $start)->endOfMonth();
+    $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+    $end   = (clone $start)->endOfMonth();
 
-        // Ambil cutting_center berdasarkan type (SEMUA DARI ORDERS)
+    // =========================
+    // 1️⃣ Ambil cutting_center DARI ORDERS
+    // =========================
+    if ($type === 'inbound') {
+        $subquery = DB::table('order_details as od')
+            ->join('orders as o', 'o.id', '=', 'od.order_id')
+            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+            ->where('loc.location_code', $locationCode)
+            ->whereRaw('LOWER(o.type) = ?', ['inbound'])
+            ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) as cutting_center'))
+            ->distinct();
+
+        $cuttingCentersFromOrders = DB::table(DB::raw("({$subquery->toSql()}) as centers"))
+            ->mergeBindings($subquery)
+            ->whereNotNull('cutting_center')
+            ->where('cutting_center', '<>', '')
+            ->pluck('cutting_center');
+    } else {
+        $subquery = DB::table('order_details as od')
+            ->join('orders as o', 'o.id', '=', 'od.order_id')
+            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+            ->where('loc.location_code', $locationCode)
+            ->whereRaw('LOWER(o.type) = ?', ['outbound'])
+            ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) as rack'))
+            ->distinct();
+
+        $cuttingCentersFromOrders = DB::table(DB::raw("({$subquery->toSql()}) as racks"))
+            ->mergeBindings($subquery)
+            ->whereNotNull('rack')
+            ->where('rack', '<>', '')
+            ->pluck('rack');
+    }
+
+    // =========================
+    // 2️⃣ Ambil cutting_center DARI PLANNING (Excel import)
+    // =========================
+    $cuttingCentersFromPlanning = Planning::query()
+        ->where('type', $type)
+        ->where('location_code', $locationCode)
+        ->whereBetween('plan_date', [$start->toDateString(), $end->toDateString()])
+        ->distinct()
+        ->pluck('cutting_center');
+
+    // =========================
+    // 3️⃣ MERGE & UNIQUE
+    // =========================
+    $cuttingCenters = $cuttingCentersFromOrders
+        ->merge($cuttingCentersFromPlanning)
+        ->unique()
+        ->filter()
+        ->values();
+
+    // =========================
+    // 4️⃣ Ambil codes DARI ORDERS
+    // =========================
+    $codesFromOrders = DB::table('order_details as od')
+        ->join('orders as o', 'o.id', '=', 'od.order_id')
+        ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
+        ->where('loc.location_code', $locationCode)
+        ->whereRaw('LOWER(o.type) = ?', [$type])
+        ->select('od.code')
+        ->distinct()
+        ->pluck('code');
+
+    // =========================
+    // 5️⃣ BUILD GROUPS
+    // =========================
+    $groups = collect();
+
+    foreach ($cuttingCenters as $cc) {
+        // Ambil codes dari orders untuk cutting_center ini
         if ($type === 'inbound') {
-            $subquery = DB::table('order_details as od')
+            $ccCodesFromOrders = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
                 ->where('loc.location_code', $locationCode)
                 ->whereRaw('LOWER(o.type) = ?', ['inbound'])
-                ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) as cutting_center'))
-                ->distinct();
-
-            $cuttingCenters = DB::table(DB::raw("({$subquery->toSql()}) as centers"))
-                ->mergeBindings($subquery)
-                ->whereNotNull('cutting_center')
-                ->where('cutting_center', '<>', '')
-                ->pluck('cutting_center')
-                ->values();
+                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) = ?', [$cc])
+                ->distinct()
+                ->pluck('od.code');
         } else {
-            $subquery = DB::table('order_details as od')
+            $ccCodesFromOrders = DB::table('order_details as od')
                 ->join('orders as o', 'o.id', '=', 'od.order_id')
                 ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
                 ->where('loc.location_code', $locationCode)
                 ->whereRaw('LOWER(o.type) = ?', ['outbound'])
-                ->select(DB::raw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) as rack'))
-                ->distinct();
-
-            $cuttingCenters = DB::table(DB::raw("({$subquery->toSql()}) as racks"))
-                ->mergeBindings($subquery)
-                ->whereNotNull('rack')
-                ->where('rack', '<>', '')
-                ->pluck('rack')
-                ->values();
+                ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) = ?', [$cc])
+                ->distinct()
+                ->pluck('od.code');
         }
 
-        $codes = DB::table('order_details as od')
-            ->join('orders as o', 'o.id', '=', 'od.order_id')
-            ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
-            ->where('loc.location_code', $locationCode)
-            ->whereRaw('LOWER(o.type) = ?', [$type])
-            ->select('od.code')
-            ->distinct()
-            ->orderBy('od.code')
-            ->pluck('code');
-
-        $groups = collect();
-
-        foreach ($cuttingCenters as $cc) {
-            if ($type === 'inbound') {
-                $ccCodes = DB::table('order_details as od')
-                    ->join('orders as o', 'o.id', '=', 'od.order_id')
-                    ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
-                    ->where('loc.location_code', $locationCode)
-                    ->whereRaw('LOWER(o.type) = ?', ['inbound'])
-                    ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.product.custom_field.cutting_center")) = ?', [$cc])
-                    ->distinct()
-                    ->pluck('od.code');
-            } else {
-                $ccCodes = DB::table('order_details as od')
-                    ->join('orders as o', 'o.id', '=', 'od.order_id')
-                    ->join('locations as loc', 'loc.external_id', '=', 'o.external_location_id')
-                    ->where('loc.location_code', $locationCode)
-                    ->whereRaw('LOWER(o.type) = ?', ['outbound'])
-                    ->whereRaw('JSON_UNQUOTE(JSON_EXTRACT(od.raw_payload, "$.rack")) = ?', [$cc])
-                    ->distinct()
-                    ->pluck('od.code');
-            }
-
-            $groups[$cc] = $ccCodes->map(fn ($c) => (object)['code' => $c]);
-        }
-
-        $plans = Planning::query()
+        // Ambil codes dari planning untuk cutting_center ini (Excel import)
+        $ccCodesFromPlanning = Planning::query()
             ->where('type', $type)
             ->where('location_code', $locationCode)
-            ->whereBetween('plan_date', [
-                $start->toDateString(),
-                $end->toDateString(),
-            ])
-            ->get();
+            ->where('cutting_center', $cc)
+            ->whereBetween('plan_date', [$start->toDateString(), $end->toDateString()])
+            ->distinct()
+            ->pluck('code');
 
-        $qtyMap = [];
-        foreach ($plans as $p) {
-            $cc   = $p->cutting_center;
-            $code = $p->code;
-            $date = $p->plan_date->toDateString();
+        // MERGE codes dari orders + planning
+        $allCodes = $ccCodesFromOrders
+            ->merge($ccCodesFromPlanning)
+            ->unique()
+            ->filter()
+            ->sort()
+            ->values();
 
-            $qtyMap[$cc][$code][$date] = (int) $p->qty;
-        }
-
-        $dates = [];
-        $cursor = $start->copy();
-        while ($cursor->lte($end)) {
-            $dates[] = [
-                'date' => $cursor->toDateString(),
-                'label' => $cursor->format('d M'),
-                'weekday' => $cursor->format('D'),
-            ];
-            $cursor->addDay();
-        }
-
-        $html = view('planning._table', [
-            'location_code' => $locationCode,
-            'month' => $month,
-            'type' => $type,
-            'dates' => $dates,
-            'groups' => $groups,
-            'qtyMap' => $qtyMap,
-        ])->render();
-
-        return response()->json(['html' => $html]);
+        $groups[$cc] = $allCodes->map(fn ($c) => (object)['code' => $c]);
     }
+
+    // =========================
+    // 6️⃣ QTY MAP (sama seperti sebelumnya)
+    // =========================
+    $plans = Planning::query()
+        ->where('type', $type)
+        ->where('location_code', $locationCode)
+        ->whereBetween('plan_date', [$start->toDateString(), $end->toDateString()])
+        ->get();
+
+    $qtyMap = [];
+    foreach ($plans as $p) {
+        $cc   = $p->cutting_center;
+        $code = $p->code;
+        $date = $p->plan_date->toDateString();
+
+        $qtyMap[$cc][$code][$date] = (int) $p->qty;
+    }
+
+    // =========================
+    // 7️⃣ DATES
+    // =========================
+    $dates = [];
+    $cursor = $start->copy();
+    while ($cursor->lte($end)) {
+        $dates[] = [
+            'date' => $cursor->toDateString(),
+            'label' => $cursor->format('d M'),
+            'weekday' => $cursor->format('D'),
+        ];
+        $cursor->addDay();
+    }
+
+    // =========================
+    // 8️⃣ RENDER
+    // =========================
+    $html = view('planning._table', [
+        'location_code' => $locationCode,
+        'month' => $month,
+        'type' => $type,
+        'dates' => $dates,
+        'groups' => $groups,
+        'qtyMap' => $qtyMap,
+    ])->render();
+
+    return response()->json(['html' => $html]);
+}
+
 
     /**
      * Autosave per cell (by code)
