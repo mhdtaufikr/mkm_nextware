@@ -34,7 +34,8 @@
 
    /* ✅ Freeze Second Column (Code) - SEMUA row pakai class */
     .table-planning .freeze-code-col {
-        position: sticky; /* ← Kurangi dari 150px jadi 120px atau lebih kecil */
+        position: sticky;
+        left: 50px; /* ← Kurangi dari 150px jadi 50px atau lebih kecil */
         background-color: #ffffff;
         z-index: 4;
         box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
@@ -43,7 +44,8 @@
 
     /* ✅ Freeze header Code column */
     .table-planning .freeze-code-header {
-        position: sticky; /* ← Sama dengan freeze-code-col */
+        position: sticky;
+        left: 50px; /* ← Sama dengan freeze-code-col */
         z-index: 11;
         background-color: #5a9fd4;
         box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
